@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/stefanschmerda/tmux-commander/internal/config"
 )
@@ -25,11 +26,11 @@ type Action struct {
 func Build(cmd config.Command, ui config.UI) (Action, error) {
 	switch {
 	case cmd.Tmux != "":
-		return Action{Kind: KindTmux, Command: shellPath(), Args: []string{"-lc", "tmux " + cmd.Tmux}}, nil
+		return deferredTmuxAction(KindTmux, "tmux "+cmd.Tmux), nil
 	case cmd.Shell != "":
 		return Action{Kind: KindShell, Command: shellPath(), Args: []string{"-lc", cmd.Shell}}, nil
 	case cmd.Popup != "":
-		args := []string{"display-popup", "-E"}
+		args := []string{"tmux", "display-popup", "-E"}
 		if ui.PopupWidth != "" {
 			args = append(args, "-w", ui.PopupWidth)
 		}
@@ -37,7 +38,7 @@ func Build(cmd config.Command, ui config.UI) (Action, error) {
 			args = append(args, "-h", ui.PopupHeight)
 		}
 		args = append(args, cmd.Popup)
-		return Action{Kind: KindPopup, Command: "tmux", Args: args}, nil
+		return deferredTmuxAction(KindPopup, shellJoin(args...)), nil
 	default:
 		return Action{}, errors.New("command has no action")
 	}
@@ -56,4 +57,27 @@ func shellPath() string {
 		return shell
 	}
 	return "/bin/sh"
+}
+
+func deferredTmuxAction(kind Kind, command string) Action {
+	return Action{
+		Kind:    kind,
+		Command: "tmux",
+		Args:    []string{"run-shell", "-b", "sleep 0.05; " + command},
+	}
+}
+
+func shellJoin(args ...string) string {
+	quoted := make([]string, 0, len(args))
+	for _, arg := range args {
+		quoted = append(quoted, shellQuote(arg))
+	}
+	return strings.Join(quoted, " ")
+}
+
+func shellQuote(s string) string {
+	if s == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }

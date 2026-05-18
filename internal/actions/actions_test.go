@@ -15,7 +15,10 @@ func TestBuildTmuxAction(t *testing.T) {
 	if action.Kind != KindTmux {
 		t.Fatalf("kind = %q, want %q", action.Kind, KindTmux)
 	}
-	if len(action.Args) != 2 || action.Args[0] != "-lc" || action.Args[1] != "tmux split-window -h" {
+	if action.Command != "tmux" {
+		t.Fatalf("command = %q, want tmux", action.Command)
+	}
+	if len(action.Args) != 3 || action.Args[0] != "run-shell" || action.Args[1] != "-b" || action.Args[2] != "sleep 0.05; tmux split-window -h" {
 		t.Fatalf("unexpected args: %#v", action.Args)
 	}
 }
@@ -39,9 +42,19 @@ func TestBuildPopupAction(t *testing.T) {
 	if action.Kind != KindPopup || action.Command != "tmux" {
 		t.Fatalf("unexpected action: %#v", action)
 	}
-	want := []string{"display-popup", "-E", "-w", "90%", "-h", "50%", "lazygit"}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-w' '90%' '-h' '50%' 'lazygit'"}
 	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("args = %#v, want %#v", action.Args, want)
+	}
+}
+
+func TestBuildPopupActionQuotesShellCommand(t *testing.T) {
+	action, err := Build(config.Command{Popup: "echo 'hi'"}, config.DefaultUI())
+	if err != nil {
+		t.Fatalf("Build returned error: %v", err)
+	}
+	if !strings.Contains(action.Args[2], "'echo '\\''hi'\\'''") {
+		t.Fatalf("popup command was not shell quoted: %#v", action.Args)
 	}
 }
 
