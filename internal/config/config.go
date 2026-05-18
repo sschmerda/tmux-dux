@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/stefanschmerda/tmux-commander/internal/theme"
 )
 
 type UI struct {
@@ -14,6 +15,7 @@ type UI struct {
 	PopupWidth  string `toml:"popup_width"`
 	PopupHeight string `toml:"popup_height"`
 	Border      bool   `toml:"border"`
+	Theme       string `toml:"theme"`
 }
 
 type Command struct {
@@ -27,11 +29,13 @@ type Command struct {
 	Popup       string   `toml:"popup"`
 	PopupWidth  string   `toml:"popup_width"`
 	PopupHeight string   `toml:"popup_height"`
+	Internal    string   `toml:"-"`
 }
 
 type Config struct {
-	UI       UI        `toml:"ui"`
-	Commands []Command `toml:"commands"`
+	UI          UI          `toml:"ui"`
+	CustomTheme theme.Theme `toml:"custom_theme"`
+	Commands    []Command   `toml:"commands"`
 }
 
 func DefaultUI() UI {
@@ -41,13 +45,14 @@ func DefaultUI() UI {
 		PopupWidth:  "80%",
 		PopupHeight: "80%",
 		Border:      true,
+		Theme:       "shades-of-purple",
 	}
 }
 
 func DefaultConfig() Config {
 	return Config{
 		UI:       DefaultUI(),
-		Commands: DefaultCommands(),
+		Commands: ensureInternalCommands(DefaultCommands()),
 	}
 }
 
@@ -95,8 +100,21 @@ func LoadFile(path string) (Config, error) {
 	if cfg.UI.PopupHeight == "" {
 		cfg.UI.PopupHeight = DefaultUI().PopupHeight
 	}
+	if cfg.UI.Theme == "" {
+		cfg.UI.Theme = DefaultUI().Theme
+	}
 	if len(cfg.Commands) == 0 {
 		cfg.Commands = DefaultCommands()
 	}
+	cfg.Commands = ensureInternalCommands(cfg.Commands)
 	return cfg, nil
+}
+
+func ensureInternalCommands(commands []Command) []Command {
+	for _, cmd := range commands {
+		if cmd.Internal == InternalThemePreview {
+			return commands
+		}
+	}
+	return append(commands, ThemePreviewCommand())
 }

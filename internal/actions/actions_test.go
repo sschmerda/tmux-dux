@@ -5,10 +5,13 @@ import (
 	"testing"
 
 	"github.com/stefanschmerda/tmux-commander/internal/config"
+	"github.com/stefanschmerda/tmux-commander/internal/theme"
 )
 
+var testTheme = theme.Resolve("shades-of-purple")
+
 func TestBuildTmuxAction(t *testing.T) {
-	action, err := Build(config.Command{Tmux: "split-window -h"}, config.DefaultUI())
+	action, err := Build(config.Command{Tmux: "split-window -h"}, config.DefaultUI(), testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
@@ -24,7 +27,7 @@ func TestBuildTmuxAction(t *testing.T) {
 }
 
 func TestBuildShellAction(t *testing.T) {
-	action, err := Build(config.Command{Shell: "echo hi"}, config.DefaultUI())
+	action, err := Build(config.Command{Shell: "echo hi"}, config.DefaultUI(), testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
@@ -35,14 +38,14 @@ func TestBuildShellAction(t *testing.T) {
 
 func TestBuildPopupAction(t *testing.T) {
 	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
-	action, err := Build(config.Command{Popup: "lazygit"}, ui)
+	action, err := Build(config.Command{Popup: "lazygit"}, ui, testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
 	if action.Kind != KindPopup || action.Command != "tmux" {
 		t.Fatalf("unexpected action: %#v", action)
 	}
-	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-w' '90%' '-h' '50%' 'lazygit'"}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00,bg=#2d2b55' '-w' '90%' '-h' '50%' 'lazygit'"}
 	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("args = %#v, want %#v", action.Args, want)
 	}
@@ -51,11 +54,11 @@ func TestBuildPopupAction(t *testing.T) {
 func TestBuildPopupActionUsesCommandSizeOverride(t *testing.T) {
 	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
 	cmd := config.Command{Popup: "lazygit", PopupWidth: "95%", PopupHeight: "85%"}
-	action, err := Build(cmd, ui)
+	action, err := Build(cmd, ui, testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
-	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-w' '95%' '-h' '85%' 'lazygit'"}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00,bg=#2d2b55' '-w' '95%' '-h' '85%' 'lazygit'"}
 	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("args = %#v, want %#v", action.Args, want)
 	}
@@ -64,18 +67,18 @@ func TestBuildPopupActionUsesCommandSizeOverride(t *testing.T) {
 func TestBuildPopupActionCanOverrideOnlyOneSize(t *testing.T) {
 	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
 	cmd := config.Command{Popup: "lazygit", PopupHeight: "85%"}
-	action, err := Build(cmd, ui)
+	action, err := Build(cmd, ui, testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
-	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-w' '90%' '-h' '85%' 'lazygit'"}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00,bg=#2d2b55' '-w' '90%' '-h' '85%' 'lazygit'"}
 	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("args = %#v, want %#v", action.Args, want)
 	}
 }
 
 func TestBuildPopupActionQuotesShellCommand(t *testing.T) {
-	action, err := Build(config.Command{Popup: "echo 'hi'"}, config.DefaultUI())
+	action, err := Build(config.Command{Popup: "echo 'hi'"}, config.DefaultUI(), testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
@@ -85,7 +88,7 @@ func TestBuildPopupActionQuotesShellCommand(t *testing.T) {
 }
 
 func TestBuildRejectsMissingAction(t *testing.T) {
-	if _, err := Build(config.Command{}, config.DefaultUI()); err == nil {
+	if _, err := Build(config.Command{}, config.DefaultUI(), testTheme); err == nil {
 		t.Fatal("Build returned nil error")
 	}
 }

@@ -11,11 +11,14 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFile returned error: %v", err)
 	}
-	if got := len(cfg.Commands); got != 15 {
-		t.Fatalf("default command count = %d, want 15", got)
+	if got := len(cfg.Commands); got != 16 {
+		t.Fatalf("default command count = %d, want 16", got)
 	}
 	if cfg.UI.Width != "75%" || cfg.UI.PopupWidth != "80%" {
 		t.Fatalf("unexpected default UI: %#v", cfg.UI)
+	}
+	if cfg.UI.Theme != "shades-of-purple" {
+		t.Fatalf("theme = %q, want shades-of-purple", cfg.UI.Theme)
 	}
 }
 
@@ -24,6 +27,15 @@ func TestLoadFileParsesTOMLCommands(t *testing.T) {
 	input := `
 [ui]
 width = "60%"
+theme = "custom"
+
+[custom_theme]
+background = "#111111"
+title = "#eeeeee"
+prompt = "#aaaaaa"
+query = "#bbbbbb"
+empty = "#cccccc"
+selected_bg = "#333333"
 
 [[commands]]
 title = "Logs"
@@ -48,14 +60,23 @@ popup_height = "85%"
 	if cfg.UI.Height != "70%" {
 		t.Fatalf("height = %q, want default 70%%", cfg.UI.Height)
 	}
-	if len(cfg.Commands) != 1 {
-		t.Fatalf("command count = %d, want 1", len(cfg.Commands))
+	if cfg.UI.Theme != "custom" {
+		t.Fatalf("theme = %q, want custom", cfg.UI.Theme)
+	}
+	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.SelectedBG != "#333333" {
+		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
+	}
+	if len(cfg.Commands) != 2 {
+		t.Fatalf("command count = %d, want 2", len(cfg.Commands))
 	}
 	if cfg.Commands[0].Popup != "tail -f app.log" {
 		t.Fatalf("popup = %q", cfg.Commands[0].Popup)
 	}
 	if cfg.Commands[0].PopupWidth != "95%" || cfg.Commands[0].PopupHeight != "85%" {
 		t.Fatalf("popup size = %q x %q", cfg.Commands[0].PopupWidth, cfg.Commands[0].PopupHeight)
+	}
+	if cfg.Commands[1].Internal != InternalThemePreview {
+		t.Fatalf("internal command = %q, want %q", cfg.Commands[1].Internal, InternalThemePreview)
 	}
 }
 
@@ -87,6 +108,7 @@ func TestDefaultCommandsContainExpectedInitialSet(t *testing.T) {
 		"Rename Session":   false,
 		"Detach":           false,
 		"Reload Config":    false,
+		"Preview Themes":   false,
 		"Lazygit":          false,
 		"Btop":             false,
 	}

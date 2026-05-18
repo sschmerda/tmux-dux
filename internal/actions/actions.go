@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/stefanschmerda/tmux-commander/internal/config"
+	"github.com/stefanschmerda/tmux-commander/internal/theme"
+	"github.com/stefanschmerda/tmux-commander/internal/tmux"
 )
 
 type Kind string
@@ -23,7 +25,7 @@ type Action struct {
 	Args    []string
 }
 
-func Build(cmd config.Command, ui config.UI) (Action, error) {
+func Build(cmd config.Command, ui config.UI, t theme.Theme) (Action, error) {
 	switch {
 	case cmd.Tmux != "":
 		return deferredTmuxAction(KindTmux, "tmux "+cmd.Tmux), nil
@@ -31,6 +33,12 @@ func Build(cmd config.Command, ui config.UI) (Action, error) {
 		return Action{Kind: KindShell, Command: shellPath(), Args: []string{"-lc", cmd.Shell}}, nil
 	case cmd.Popup != "":
 		args := []string{"tmux", "display-popup", "-E"}
+		if style := tmux.PopupStyle(t); style != "" {
+			args = append(args, "-s", style)
+		}
+		if borderStyle := tmux.PopupBorderStyle(t); borderStyle != "" {
+			args = append(args, "-S", borderStyle)
+		}
 		if width := popupWidth(cmd, ui); width != "" {
 			args = append(args, "-w", width)
 		}

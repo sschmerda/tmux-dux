@@ -8,32 +8,76 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stefanschmerda/tmux-commander/internal/config"
 	"github.com/stefanschmerda/tmux-commander/internal/fuzzy"
+	"github.com/stefanschmerda/tmux-commander/internal/theme"
 )
 
 type Model struct {
-	commands []config.Command
-	query    string
-	cursor   int
-	selected *config.Command
-	width    int
-	height   int
+	commands      []config.Command
+	activeTheme   theme.Theme
+	previewThemes []theme.Theme
+	previewIndex  int
+	styles        styles
+	mode          mode
+	query         string
+	cursor        int
+	selected      *config.Command
+	width         int
+	height        int
 }
 
-var (
-	titleStyle    = lipgloss.NewStyle().Bold(true)
-	headerStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Bold(true).PaddingTop(1)
-	descStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	selectedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Background(lipgloss.Color("4"))
-	chipStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
-	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+type mode int
+
+const (
+	modeCommands mode = iota
+	modeThemePreview
 )
 
-func New(commands []config.Command) Model {
-	return Model{commands: commands}
+type styles struct {
+	root          lipgloss.Style
+	title         lipgloss.Style
+	header        lipgloss.Style
+	desc          lipgloss.Style
+	prompt        lipgloss.Style
+	query         lipgloss.Style
+	empty         lipgloss.Style
+	selected      lipgloss.Style
+	selectedTitle lipgloss.Style
+	selectedDesc  lipgloss.Style
+	selectedChip  lipgloss.Style
+	chip          lipgloss.Style
+	muted         lipgloss.Style
 }
 
-func Run(commands []config.Command) (*config.Command, error) {
-	program := tea.NewProgram(New(commands), tea.WithAltScreen())
+func newStyles(t theme.Theme) styles {
+	return styles{
+		root:          lipgloss.NewStyle().Background(lipgloss.Color(t.Background)),
+		title:         lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Title)).Background(lipgloss.Color(t.Background)),
+		header:        lipgloss.NewStyle().Foreground(lipgloss.Color(t.Header)).Background(lipgloss.Color(t.Background)).Bold(true),
+		desc:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Description)).Background(lipgloss.Color(t.Background)),
+		prompt:        lipgloss.NewStyle().Foreground(lipgloss.Color(t.Prompt)).Background(lipgloss.Color(t.Background)),
+		query:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Query)).Background(lipgloss.Color(t.Background)),
+		empty:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Empty)).Background(lipgloss.Color(t.Background)),
+		selected:      lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
+		selectedTitle: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
+		selectedDesc:  lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
+		selectedChip:  lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
+		chip:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Chip)).Background(lipgloss.Color(t.Background)),
+		muted:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Background(lipgloss.Color(t.Background)),
+	}
+}
+
+func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme) Model {
+	return Model{
+		commands:      commands,
+		activeTheme:   active,
+		previewThemes: previewThemes,
+		previewIndex:  previewIndex(previewThemes, active.Name),
+		styles:        newStyles(active),
+	}
+}
+
+func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme) (*config.Command, error) {
+	program := tea.NewProgram(New(commands, active, previewThemes), tea.WithAltScreen())
 	finalModel, err := program.Run()
 	if err != nil {
 		return nil, err
@@ -55,6 +99,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 	case tea.KeyMsg:
+		if m.mode == modeThemePreview {
+			return m.updateThemePreview(msg)
+		}
 		switch msg.String() {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
@@ -62,6 +109,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			matches := fuzzy.Filter(m.commands, m.query)
 			if len(matches) > 0 {
 				cmd := matches[m.cursor].Command
+				if cmd.Internal == config.InternalThemePreview {
+					m.mode = modeThemePreview
+					m.query = ""
+					m.cursor = 0
+					m.previewIndex = previewIndex(m.previewThemes, m.activeTheme.Name)
+					m.styles = newStyles(m.previewThemes[m.previewIndex])
+					return m, nil
+				}
 				m.selected = &cmd
 			}
 			return m, tea.Quit
@@ -88,26 +143,45 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) updateThemePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c":
+		return m, tea.Quit
+	case "esc", "enter":
+		m.mode = modeCommands
+		m.styles = newStyles(m.activeTheme)
+	case "up", "left", "ctrl+p":
+		m.previousTheme()
+	case "down", "right", "ctrl+n":
+		m.nextTheme()
+	}
+	return m, nil
+}
+
 func (m Model) View() string {
 	if m.width == 0 {
 		return ""
 	}
 
 	matches := fuzzy.Filter(m.commands, m.query)
+	s := m.styles
+	if m.mode == modeThemePreview {
+		return m.viewThemePreview()
+	}
 	var b strings.Builder
-	b.WriteString(titleStyle.Render("tmux-commander"))
+	b.WriteString(s.title.Render("tmux-commander"))
 	b.WriteString("\n")
-	b.WriteString(mutedStyle.Render("Search: "))
-	b.WriteString(m.query)
+	b.WriteString(s.prompt.Render("Search: "))
+	b.WriteString(s.query.Render(m.query))
 	if m.query == "" {
-		b.WriteString(mutedStyle.Render(" Type to filter"))
+		b.WriteString(s.muted.Render(" Type to filter"))
 	}
 	b.WriteString("\n")
 
 	if len(matches) == 0 {
 		b.WriteString("\n")
-		b.WriteString(mutedStyle.Render("No commands found"))
-		return b.String()
+		b.WriteString(s.empty.Render("No commands found"))
+		return s.root.Width(m.width).Height(m.height).Render(b.String())
 	}
 
 	rowIndex := 0
@@ -121,14 +195,15 @@ func (m Model) View() string {
 	for _, match := range matches {
 		cmd := match.Command
 		if showHeaders && cmd.Category != lastCategory {
-			b.WriteString(headerStyle.Render(cmd.Category))
+			b.WriteString(s.header.Render(cmd.Category))
 			b.WriteString("\n")
 			lastCategory = cmd.Category
 		}
 
-		row := renderRow(cmd)
-		if rowIndex == m.cursor {
-			row = selectedStyle.Width(max(1, m.width-1)).Render(row)
+		selected := rowIndex == m.cursor
+		row := renderRow(cmd, s, selected)
+		if selected {
+			row = s.selected.Width(max(1, m.width-1)).Render(row)
 		}
 		b.WriteString(row)
 		b.WriteString("\n")
@@ -136,24 +211,95 @@ func (m Model) View() string {
 		if rowIndex >= maxRows {
 			remaining := len(matches) - rowIndex
 			if remaining > 0 {
-				b.WriteString(mutedStyle.Render(fmt.Sprintf("%d more...", remaining)))
+				b.WriteString(s.muted.Render(fmt.Sprintf("%d more...", remaining)))
 			}
 			break
 		}
 	}
-	return b.String()
+	return s.root.Width(m.width).Height(m.height).Render(b.String())
 }
 
-func renderRow(cmd config.Command) string {
+func (m Model) viewThemePreview() string {
+	s := m.styles
+	current := m.previewThemes[m.previewIndex]
+	var b strings.Builder
+	b.WriteString(s.title.Render("Theme Preview"))
+	b.WriteString("\n")
+	b.WriteString(s.prompt.Render("Theme: "))
+	b.WriteString(s.query.Render(current.Name))
+	b.WriteString("\n")
+	b.WriteString(s.muted.Render(`Set with: theme = "` + current.Name + `"`))
+	b.WriteString("\n\n")
+	b.WriteString(s.header.Render("Sample Commands"))
+	b.WriteString("\n")
+	b.WriteString(renderRow(config.Command{
+		Title:       "Split Horizontal",
+		Description: "Split pane side by side",
+		Aliases:     []string{"sh"},
+	}, s, false))
+	b.WriteString("\n")
+	b.WriteString(renderRow(config.Command{
+		Title:       "Lazygit",
+		Description: "Open lazygit in a popup",
+		Aliases:     []string{"lg"},
+		Icon:        "git",
+	}, s, false))
+	b.WriteString("\n\n")
+	b.WriteString(s.selected.Width(max(1, m.width-1)).Render("  Selected row preview"))
+	b.WriteString("\n\n")
+	b.WriteString(s.muted.Render("Up/Down or Left/Right previews themes, Enter/Esc returns"))
+	return s.root.Width(m.width).Height(m.height).Render(b.String())
+}
+
+func (m *Model) previousTheme() {
+	if len(m.previewThemes) == 0 {
+		return
+	}
+	m.previewIndex--
+	if m.previewIndex < 0 {
+		m.previewIndex = len(m.previewThemes) - 1
+	}
+	m.styles = newStyles(m.previewThemes[m.previewIndex])
+}
+
+func (m *Model) nextTheme() {
+	if len(m.previewThemes) == 0 {
+		return
+	}
+	m.previewIndex++
+	if m.previewIndex >= len(m.previewThemes) {
+		m.previewIndex = 0
+	}
+	m.styles = newStyles(m.previewThemes[m.previewIndex])
+}
+
+func previewIndex(themes []theme.Theme, name string) int {
+	for i, t := range themes {
+		if t.Name == name {
+			return i
+		}
+	}
+	return 0
+}
+
+func renderRow(cmd config.Command, s styles, selected bool) string {
 	icon := iconLabel(cmd.Icon)
 	title := strings.TrimSpace(icon + " " + cmd.Title)
 	meta := []string{}
 	for _, alias := range cmd.Aliases {
 		meta = append(meta, "#"+alias)
 	}
+	titleStyle := s.title
+	descStyle := s.desc
+	chipStyle := s.chip
+	if selected {
+		titleStyle = s.selectedTitle
+		descStyle = s.selectedDesc
+		chipStyle = s.selectedChip
+	}
 	line := "  " + titleStyle.Render(title)
 	if len(meta) > 0 {
-		line += " " + chipStyle.Render(strings.Join(meta, " "))
+		line += chipStyle.Render(" " + strings.Join(meta, " "))
 	}
 	if cmd.Description != "" {
 		line += "\n    " + descStyle.Render(cmd.Description)

@@ -1,5 +1,7 @@
 package config
 
+const InternalThemePreview = "theme-preview"
+
 func DefaultCommands() []Command {
 	return []Command{
 		{
@@ -93,6 +95,7 @@ func DefaultCommands() []Command {
 			Aliases:     []string{"rc"},
 			Tmux:        "source-file ~/.tmux.conf \\; display-message 'tmux config reloaded'",
 		},
+		ThemePreviewCommand(),
 		{
 			Title:       "Lazygit",
 			Description: "Open lazygit in a popup",
@@ -109,5 +112,15 @@ func DefaultCommands() []Command {
 			Icon:        "cpu",
 			Popup:       "btop",
 		},
+	}
+}
+
+func ThemePreviewCommand() Command {
+	return Command{
+		Title:       "Preview Themes",
+		Description: "Preview built-in palette themes",
+		Category:    "Settings",
+		Aliases:     []string{"themes"},
+		Internal:    InternalThemePreview,
 	}
 }

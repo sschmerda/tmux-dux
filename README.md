@@ -54,6 +54,7 @@ height = "70%"
 popup_width = "80%"
 popup_height = "80%"
 border = true
+theme = "shades-of-purple"
 
 [[commands]]
 title = "Lazygit"
@@ -83,6 +84,53 @@ tmux = "split-window -h -c '#{pane_current_path}'"
 
 `width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
 
+Select a built-in theme by setting `[ui].theme` to one of these exact names:
+
+- `catppuccin`
+- `tokyonight`
+- `rosepine`
+- `kanagawa`
+- `shades-of-purple`
+- `solarized`
+- `gruvbox`
+
+Example:
+
+```toml
+[ui]
+theme = "gruvbox"
+```
+
+Set `[ui].theme` to `custom` only when you want to provide your own colors with a top-level `[custom_theme]` block:
+
+```toml
+[ui]
+theme = "custom"
+
+[custom_theme]
+background = "#101018"
+title = "#ffffff"
+header = "#ffcc66"
+muted = "#7c7f93"
+prompt = "#ffcc66"
+query = "#ffffff"
+description = "#b4befe"
+empty = "#7c7f93"
+chip = "#94e2d5"
+selected_fg = "#ffffff"
+selected_bg = "#7c3aed"
+```
+
+Any omitted custom theme field falls back to the default `shades-of-purple` value.
+
+List valid theme names from the binary:
+
+```sh
+tmux-commander themes
+```
+
+The built-in `Preview Themes` palette command opens an in-app preview in the current popup. Use `Up` / `Down` or `Left` / `Right` to cycle themes, then `Enter` or `Esc` to return to the command list. The preview does not write config; it shows the `theme = "..."` value to set.
+
 ## Actions
 
 Each command must define exactly one action field.
@@ -107,6 +155,8 @@ popup_width = "95%"
 popup_height = "90%"
 ```
 
+Popup actions inherit the active theme's tmux popup style. `background` / `query` are used for the popup body, and `background` / `header` are used for the popup border. Full-screen terminal apps may still draw their own colors.
+
 Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI exits to avoid nested input conflicts.
 
 ## Controls
@@ -115,6 +165,8 @@ Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI ex
 - Use `Up` / `Down` or `Ctrl-P` / `Ctrl-N` to move.
 - Press `Enter` to select.
 - Press `Esc` or `Ctrl-C` to cancel.
+
+In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list.
 
 When the query is empty, commands are grouped by category. While filtering, category headers are hidden and results are sorted by fuzzy score. Multi-token searches such as `split pane` are supported.
 
@@ -133,6 +185,7 @@ When the query is empty, commands are grouped by category. While filtering, cate
 - Rename Session
 - Detach
 - Reload Config
+- Preview Themes
 - Lazygit
 - Btop
 
@@ -154,6 +207,7 @@ The deliberate differences in `tmux-commander` are:
 ```sh
 go test ./...
 go run ./cmd/tmux-commander
+go run ./cmd/tmux-commander themes
 go build -o bin/tmux-commander ./cmd/tmux-commander
 ```
 
