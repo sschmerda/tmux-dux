@@ -74,7 +74,7 @@ func openConfiguredPopup(cfg config.Config, activeTheme theme.Theme) {
 		fmt.Fprintf(os.Stderr, "tmux-commander: find executable: %v\n", err)
 		os.Exit(1)
 	}
-	if err := tmux.OpenPopup(binary, cfg.UI.Width, cfg.UI.Height, cfg.UI.Border, activeTheme); err != nil {
+	if err := tmux.OpenPopup(binary, cfg.UI.Width, cfg.UI.Height, false, activeTheme); err != nil {
 		fmt.Fprintf(os.Stderr, "tmux-commander: open popup: %v\n", err)
 		os.Exit(1)
 	}

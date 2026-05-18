@@ -45,7 +45,7 @@ func TestBuildPopupAction(t *testing.T) {
 	if action.Kind != KindPopup || action.Command != "tmux" {
 		t.Fatalf("unexpected action: %#v", action)
 	}
-	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00,bg=#2d2b55' '-w' '90%' '-h' '50%' 'lazygit'"}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-d' '#{pane_current_path}' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00' '-w' '90%' '-h' '50%' 'lazygit'"}
 	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("args = %#v, want %#v", action.Args, want)
 	}
@@ -58,7 +58,7 @@ func TestBuildPopupActionUsesCommandSizeOverride(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
-	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00,bg=#2d2b55' '-w' '95%' '-h' '85%' 'lazygit'"}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-d' '#{pane_current_path}' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00' '-w' '95%' '-h' '85%' 'lazygit'"}
 	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("args = %#v, want %#v", action.Args, want)
 	}
@@ -71,7 +71,7 @@ func TestBuildPopupActionCanOverrideOnlyOneSize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
-	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00,bg=#2d2b55' '-w' '90%' '-h' '85%' 'lazygit'"}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-d' '#{pane_current_path}' '-s' 'fg=#ffffff,bg=#2d2b55' '-S' 'fg=#ff9d00' '-w' '90%' '-h' '85%' 'lazygit'"}
 	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("args = %#v, want %#v", action.Args, want)
 	}

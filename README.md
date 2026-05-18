@@ -20,7 +20,7 @@ The only runtime dependency is `tmux` itself. Optional commands such as `lazygit
 
 ## tmux Binding
 
-Recommended binding. This lets `tmux-commander` read `[ui].width`, `[ui].height`, and `[ui].border` from TOML:
+Recommended binding. This lets `tmux-commander` read `[ui].width` and `[ui].height` from TOML:
 
 ```tmux
 bind -n C-Space run-shell "tmux-commander popup"
@@ -83,6 +83,8 @@ tmux = "split-window -h -c '#{pane_current_path}'"
 ```
 
 `width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
+
+The commander popup is launched without a native tmux border and draws its own themed border. The `border` setting is retained for popup actions and future launcher options.
 
 Select a built-in theme by setting `[ui].theme` to one of these exact names:
 
@@ -155,7 +157,9 @@ popup_width = "95%"
 popup_height = "90%"
 ```
 
-Popup actions inherit the active theme's tmux popup style. `background` / `query` are used for the popup body, and `background` / `header` are used for the popup border. Full-screen terminal apps may still draw their own colors.
+Popup actions inherit the active theme's tmux popup style. `background` / `query` are used for the popup body, and `header` is used for the popup border foreground. Full-screen terminal apps may still draw their own colors.
+
+Popup actions start in the active tmux pane directory via `#{pane_current_path}`.
 
 Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI exits to avoid nested input conflicts.
 

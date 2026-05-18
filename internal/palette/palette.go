@@ -35,6 +35,7 @@ const (
 
 type styles struct {
 	root          lipgloss.Style
+	frame         lipgloss.Style
 	title         lipgloss.Style
 	header        lipgloss.Style
 	desc          lipgloss.Style
@@ -52,6 +53,7 @@ type styles struct {
 func newStyles(t theme.Theme) styles {
 	return styles{
 		root:          lipgloss.NewStyle().Background(lipgloss.Color(t.Background)),
+		frame:         lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderForeground(lipgloss.Color(t.Header)).BorderBackground(lipgloss.Color(t.Background)).Background(lipgloss.Color(t.Background)),
 		title:         lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Title)).Background(lipgloss.Color(t.Background)),
 		header:        lipgloss.NewStyle().Foreground(lipgloss.Color(t.Header)).Background(lipgloss.Color(t.Background)).Bold(true),
 		desc:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Description)).Background(lipgloss.Color(t.Background)),
@@ -187,7 +189,7 @@ func (m Model) View() string {
 	if len(matches) == 0 {
 		b.WriteString("\n")
 		b.WriteString(s.empty.Render("No commands found"))
-		return s.root.Width(m.width).Height(m.height).Render(b.String())
+		return m.renderFrame(b.String())
 	}
 
 	lastCategory := ""
@@ -213,13 +215,14 @@ func (m Model) View() string {
 		}
 
 		selected := rowIndex == m.cursor
+		contentWidth := m.contentWidth()
 		row := renderRow(cmd, s, selected)
 		rowLines := lipgloss.Height(row)
 		if linesUsed+rowLines > lineBudget {
 			break
 		}
 		if selected {
-			row = s.selected.Width(max(1, m.width-1)).Render(row)
+			row = s.selected.Width(contentWidth).Render(row)
 		}
 		b.WriteString(row)
 		b.WriteString("\n")
@@ -232,7 +235,7 @@ func (m Model) View() string {
 			break
 		}
 	}
-	return s.root.Width(m.width).Height(m.height).Render(b.String())
+	return m.renderFrame(b.String())
 }
 
 func (m Model) viewThemePreview() string {
@@ -261,10 +264,10 @@ func (m Model) viewThemePreview() string {
 		Icon:        "git",
 	}, s, false))
 	b.WriteString("\n\n")
-	b.WriteString(s.selected.Width(max(1, m.width-1)).Render("  Selected row preview"))
+	b.WriteString(s.selected.Width(m.contentWidth()).Render("  Selected row preview"))
 	b.WriteString("\n\n")
 	b.WriteString(s.muted.Render("Up/Down or Left/Right previews themes, Enter/Esc returns"))
-	return s.root.Width(m.width).Height(m.height).Render(b.String())
+	return m.renderFrame(b.String())
 }
 
 func (m *Model) previousTheme() {
@@ -323,11 +326,32 @@ func (m *Model) ensureCursorVisible() {
 }
 
 func (m Model) commandLineBudget() int {
-	rows := m.height - 4
+	rows := m.contentHeight() - 4
 	if rows < 1 {
 		return 1
 	}
 	return rows
+}
+
+func (m Model) contentWidth() int {
+	width := m.width - 2
+	if width < 1 {
+		return 1
+	}
+	return width
+}
+
+func (m Model) contentHeight() int {
+	height := m.height - 2
+	if height < 1 {
+		return 1
+	}
+	return height
+}
+
+func (m Model) renderFrame(content string) string {
+	s := m.styles
+	return s.frame.Width(m.contentWidth()).Height(m.contentHeight()).Render(content)
 }
 
 func (m Model) cursorVisible(matches []fuzzy.Match) bool {
