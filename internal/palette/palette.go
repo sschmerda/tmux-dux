@@ -20,6 +20,7 @@ type Model struct {
 	mode          mode
 	query         string
 	cursor        int
+	offset        int
 	selected      *config.Command
 	width         int
 	height        int
@@ -98,6 +99,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.ensureCursorVisible()
 	case tea.KeyMsg:
 		if m.mode == modeThemePreview {
 			return m.updateThemePreview(msg)
@@ -124,19 +126,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor > 0 {
 				m.cursor--
 			}
+			m.ensureCursorVisible()
 		case "down", "ctrl+n":
 			if m.cursor < len(fuzzy.Filter(m.commands, m.query))-1 {
 				m.cursor++
 			}
+			m.ensureCursorVisible()
 		case "backspace", "ctrl+h":
 			if len(m.query) > 0 {
 				m.query = m.query[:len(m.query)-1]
 				m.cursor = 0
+				m.offset = 0
 			}
 		default:
 			if len(msg.Runes) > 0 {
 				m.query += string(msg.Runes)
 				m.cursor = 0
+				m.offset = 0
 			}
 		}
 	}
@@ -184,33 +190,43 @@ func (m Model) View() string {
 		return s.root.Width(m.width).Height(m.height).Render(b.String())
 	}
 
-	rowIndex := 0
 	lastCategory := ""
 	showHeaders := strings.TrimSpace(m.query) == ""
-	maxRows := m.height - 4
-	if maxRows < 4 {
-		maxRows = 4
+	lineBudget := m.commandLineBudget()
+	linesUsed := 0
+	start := m.offset
+	if start >= len(matches) {
+		start = max(0, len(matches)-1)
 	}
 
-	for _, match := range matches {
+	for rowIndex := start; rowIndex < len(matches); rowIndex++ {
+		match := matches[rowIndex]
 		cmd := match.Command
 		if showHeaders && cmd.Category != lastCategory {
+			if linesUsed+1 > lineBudget {
+				break
+			}
 			b.WriteString(s.header.Render(cmd.Category))
 			b.WriteString("\n")
 			lastCategory = cmd.Category
+			linesUsed++
 		}
 
 		selected := rowIndex == m.cursor
 		row := renderRow(cmd, s, selected)
+		rowLines := lipgloss.Height(row)
+		if linesUsed+rowLines > lineBudget {
+			break
+		}
 		if selected {
 			row = s.selected.Width(max(1, m.width-1)).Render(row)
 		}
 		b.WriteString(row)
 		b.WriteString("\n")
-		rowIndex++
-		if rowIndex >= maxRows {
-			remaining := len(matches) - rowIndex
-			if remaining > 0 {
+		linesUsed += rowLines
+		if linesUsed >= lineBudget {
+			remaining := len(matches) - rowIndex - 1
+			if remaining > 0 && linesUsed < lineBudget {
 				b.WriteString(s.muted.Render(fmt.Sprintf("%d more...", remaining)))
 			}
 			break
@@ -280,6 +296,74 @@ func previewIndex(themes []theme.Theme, name string) int {
 		}
 	}
 	return 0
+}
+
+func (m *Model) ensureCursorVisible() {
+	matches := fuzzy.Filter(m.commands, m.query)
+	if len(matches) == 0 {
+		m.cursor = 0
+		m.offset = 0
+		return
+	}
+	if m.cursor >= len(matches) {
+		m.cursor = len(matches) - 1
+	}
+	if m.cursor < 0 {
+		m.cursor = 0
+	}
+	if m.cursor < m.offset {
+		m.offset = m.cursor
+	}
+	for !m.cursorVisible(matches) && m.offset < m.cursor {
+		m.offset++
+	}
+	if m.offset < 0 {
+		m.offset = 0
+	}
+}
+
+func (m Model) commandLineBudget() int {
+	rows := m.height - 4
+	if rows < 1 {
+		return 1
+	}
+	return rows
+}
+
+func (m Model) cursorVisible(matches []fuzzy.Match) bool {
+	if m.cursor < m.offset {
+		return false
+	}
+	lineBudget := m.commandLineBudget()
+	linesUsed := 0
+	lastCategory := ""
+	showHeaders := strings.TrimSpace(m.query) == ""
+	for rowIndex := m.offset; rowIndex < len(matches); rowIndex++ {
+		cmd := matches[rowIndex].Command
+		if showHeaders && cmd.Category != lastCategory {
+			if linesUsed+1 > lineBudget {
+				return false
+			}
+			linesUsed++
+			lastCategory = cmd.Category
+		}
+		rowLines := commandRowLines(cmd)
+		if linesUsed+rowLines > lineBudget {
+			return false
+		}
+		if rowIndex == m.cursor {
+			return true
+		}
+		linesUsed += rowLines
+	}
+	return false
+}
+
+func commandRowLines(cmd config.Command) int {
+	if cmd.Description != "" {
+		return 2
+	}
+	return 1
 }
 
 func renderRow(cmd config.Command, s styles, selected bool) string {
