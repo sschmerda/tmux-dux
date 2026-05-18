@@ -48,6 +48,32 @@ func TestBuildPopupAction(t *testing.T) {
 	}
 }
 
+func TestBuildPopupActionUsesCommandSizeOverride(t *testing.T) {
+	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
+	cmd := config.Command{Popup: "lazygit", PopupWidth: "95%", PopupHeight: "85%"}
+	action, err := Build(cmd, ui)
+	if err != nil {
+		t.Fatalf("Build returned error: %v", err)
+	}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-w' '95%' '-h' '85%' 'lazygit'"}
+	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("args = %#v, want %#v", action.Args, want)
+	}
+}
+
+func TestBuildPopupActionCanOverrideOnlyOneSize(t *testing.T) {
+	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
+	cmd := config.Command{Popup: "lazygit", PopupHeight: "85%"}
+	action, err := Build(cmd, ui)
+	if err != nil {
+		t.Fatalf("Build returned error: %v", err)
+	}
+	want := []string{"run-shell", "-b", "sleep 0.05; 'tmux' 'display-popup' '-E' '-w' '90%' '-h' '85%' 'lazygit'"}
+	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("args = %#v, want %#v", action.Args, want)
+	}
+}
+
 func TestBuildPopupActionQuotesShellCommand(t *testing.T) {
 	action, err := Build(config.Command{Popup: "echo 'hi'"}, config.DefaultUI())
 	if err != nil {

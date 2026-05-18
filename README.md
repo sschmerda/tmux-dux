@@ -62,6 +62,8 @@ category = "Tools"
 aliases = ["lg"]
 icon = "git"
 popup = "lazygit"
+popup_width = "95%"
+popup_height = "90%"
 
 [[commands]]
 title = "Btop"
@@ -79,7 +81,7 @@ aliases = ["sh"]
 tmux = "split-window -h -c '#{pane_current_path}'"
 ```
 
-`width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` control popups opened by command actions.
+`width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
 
 ## Actions
 
@@ -101,6 +103,8 @@ shell = "open https://github.com"
 
 ```toml
 popup = "lazygit"
+popup_width = "95%"
+popup_height = "90%"
 ```
 
 Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI exits to avoid nested input conflicts.

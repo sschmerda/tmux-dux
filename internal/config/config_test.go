@@ -32,6 +32,8 @@ category = "Tools"
 aliases = ["log", "tail"]
 icon = "file"
 popup = "tail -f app.log"
+popup_width = "95%"
+popup_height = "85%"
 `
 	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
 		t.Fatalf("write config: %v", err)
@@ -51,6 +53,9 @@ popup = "tail -f app.log"
 	}
 	if cfg.Commands[0].Popup != "tail -f app.log" {
 		t.Fatalf("popup = %q", cfg.Commands[0].Popup)
+	}
+	if cfg.Commands[0].PopupWidth != "95%" || cfg.Commands[0].PopupHeight != "85%" {
+		t.Fatalf("popup size = %q x %q", cfg.Commands[0].PopupWidth, cfg.Commands[0].PopupHeight)
 	}
 }
 

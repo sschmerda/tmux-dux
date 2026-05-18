@@ -25,6 +25,8 @@ type Command struct {
 	Tmux        string   `toml:"tmux"`
 	Shell       string   `toml:"shell"`
 	Popup       string   `toml:"popup"`
+	PopupWidth  string   `toml:"popup_width"`
+	PopupHeight string   `toml:"popup_height"`
 }
 
 type Config struct {

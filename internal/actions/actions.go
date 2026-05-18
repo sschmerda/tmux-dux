@@ -31,11 +31,11 @@ func Build(cmd config.Command, ui config.UI) (Action, error) {
 		return Action{Kind: KindShell, Command: shellPath(), Args: []string{"-lc", cmd.Shell}}, nil
 	case cmd.Popup != "":
 		args := []string{"tmux", "display-popup", "-E"}
-		if ui.PopupWidth != "" {
-			args = append(args, "-w", ui.PopupWidth)
+		if width := popupWidth(cmd, ui); width != "" {
+			args = append(args, "-w", width)
 		}
-		if ui.PopupHeight != "" {
-			args = append(args, "-h", ui.PopupHeight)
+		if height := popupHeight(cmd, ui); height != "" {
+			args = append(args, "-h", height)
 		}
 		args = append(args, cmd.Popup)
 		return deferredTmuxAction(KindPopup, shellJoin(args...)), nil
@@ -57,6 +57,20 @@ func shellPath() string {
 		return shell
 	}
 	return "/bin/sh"
+}
+
+func popupWidth(cmd config.Command, ui config.UI) string {
+	if cmd.PopupWidth != "" {
+		return cmd.PopupWidth
+	}
+	return ui.PopupWidth
+}
+
+func popupHeight(cmd config.Command, ui config.UI) string {
+	if cmd.PopupHeight != "" {
+		return cmd.PopupHeight
+	}
+	return ui.PopupHeight
 }
 
 func deferredTmuxAction(kind Kind, command string) Action {
