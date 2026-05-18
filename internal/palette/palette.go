@@ -148,9 +148,6 @@ func renderRow(cmd config.Command) string {
 	icon := iconLabel(cmd.Icon)
 	title := strings.TrimSpace(icon + " " + cmd.Title)
 	meta := []string{}
-	if cmd.Category != "" {
-		meta = append(meta, cmd.Category)
-	}
 	for _, alias := range cmd.Aliases {
 		meta = append(meta, "#"+alias)
 	}
