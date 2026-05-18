@@ -20,16 +20,16 @@ The only runtime dependency is `tmux` itself. Optional commands such as `lazygit
 
 ## tmux Binding
 
-Launch the palette in a popup:
+Recommended binding. This lets `tmux-commander` read `[ui].width`, `[ui].height`, and `[ui].border` from TOML:
 
 ```tmux
-bind -n C-Space display-popup -E -w 75% -h 70% tmux-commander
+bind -n C-Space run-shell "tmux-commander popup"
 ```
 
 Prefix binding variant:
 
 ```tmux
-bind p display-popup -E -w 75% -h 70% tmux-commander
+bind p run-shell "tmux-commander popup"
 ```
 
 Reload tmux config:
@@ -78,6 +78,8 @@ category = "Panes"
 aliases = ["sh"]
 tmux = "split-window -h -c '#{pane_current_path}'"
 ```
+
+`width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` control popups opened by command actions.
 
 ## Actions
 
@@ -154,7 +156,7 @@ go build -o bin/tmux-commander ./cmd/tmux-commander
 Run inside tmux for a realistic manual test:
 
 ```sh
-tmux display-popup -E -w 75% -h 70% ./bin/tmux-commander
+./bin/tmux-commander popup
 ```
 
 ## Release Builds
