@@ -1,0 +1,113 @@
+package config
+
+func DefaultCommands() []Command {
+	return []Command{
+		{
+			Title:       "Find Pane",
+			Description: "Select a pane interactively",
+			Category:    "Panes",
+			Aliases:     []string{"fp"},
+			Tmux:        "display-panes",
+		},
+		{
+			Title:       "Split Horizontal",
+			Description: "Split pane side by side",
+			Category:    "Panes",
+			Aliases:     []string{"sh"},
+			Tmux:        "split-window -h -c '#{pane_current_path}'",
+		},
+		{
+			Title:       "Split Vertical",
+			Description: "Split pane top and bottom",
+			Category:    "Panes",
+			Aliases:     []string{"sv"},
+			Tmux:        "split-window -v -c '#{pane_current_path}'",
+		},
+		{
+			Title:       "Close Pane",
+			Description: "Kill the current pane",
+			Category:    "Panes",
+			Aliases:     []string{"kp"},
+			Tmux:        "kill-pane",
+		},
+		{
+			Title:       "Zoom / Unzoom",
+			Description: "Toggle pane zoom",
+			Category:    "Panes",
+			Aliases:     []string{"z"},
+			Tmux:        "resize-pane -Z",
+		},
+		{
+			Title:       "New Window",
+			Description: "Create a new window in the current path",
+			Category:    "Windows",
+			Aliases:     []string{"nw"},
+			Tmux:        "new-window -c '#{pane_current_path}'",
+		},
+		{
+			Title:       "Rename Window",
+			Description: "Prompt for a new window name",
+			Category:    "Windows",
+			Aliases:     []string{"rw"},
+			Tmux:        "command-prompt -I '#W' 'rename-window -- %1'",
+		},
+		{
+			Title:       "Close Window",
+			Description: "Kill the current window",
+			Category:    "Windows",
+			Aliases:     []string{"kw"},
+			Tmux:        "kill-window",
+		},
+		{
+			Title:       "Choose Session",
+			Description: "Open tmux session chooser",
+			Category:    "Sessions",
+			Aliases:     []string{"cs"},
+			Tmux:        "choose-tree -s",
+		},
+		{
+			Title:       "New Session",
+			Description: "Prompt for a new detached session",
+			Category:    "Sessions",
+			Aliases:     []string{"ns"},
+			Tmux:        "command-prompt -p 'session name' 'new-session -d -s %1'",
+		},
+		{
+			Title:       "Rename Session",
+			Description: "Prompt for a new session name",
+			Category:    "Sessions",
+			Aliases:     []string{"rs"},
+			Tmux:        "command-prompt -I '#S' 'rename-session -- %1'",
+		},
+		{
+			Title:       "Detach",
+			Description: "Detach the current tmux client",
+			Category:    "Sessions",
+			Aliases:     []string{"d"},
+			Tmux:        "detach-client",
+		},
+		{
+			Title:       "Reload Config",
+			Description: "Reload ~/.tmux.conf",
+			Category:    "Tmux",
+			Aliases:     []string{"rc"},
+			Tmux:        "source-file ~/.tmux.conf \\; display-message 'tmux config reloaded'",
+		},
+		{
+			Title:       "Lazygit",
+			Description: "Open lazygit in a popup",
+			Category:    "Tools",
+			Aliases:     []string{"lg"},
+			Icon:        "git",
+			Popup:       "lazygit",
+		},
+		{
+			Title:       "Btop",
+			Description: "Open btop in a popup",
+			Category:    "Tools",
+			Aliases:     []string{"bt"},
+			Icon:        "cpu",
+			Popup:       "btop",
+		},
+	}
+}
