@@ -34,6 +34,8 @@ const (
 	modeThemePreview
 )
 
+const horizontalPadding = 3
+
 type styles struct {
 	root          lipgloss.Style
 	frame         lipgloss.Style
@@ -190,7 +192,7 @@ func (m Model) View() string {
 	if m.query == "" {
 		b.WriteString(s.muted.Render(" Type to filter"))
 	}
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
 	if len(matches) == 0 {
 		b.WriteString("\n")
@@ -221,7 +223,7 @@ func (m Model) View() string {
 		}
 
 		selected := rowIndex == m.cursor
-		contentWidth := m.contentWidth()
+		contentWidth := m.innerWidth()
 		row := renderRow(cmd, s, selected, m.showGlyphs, contentWidth)
 		rowLines := lipgloss.Height(row)
 		if linesUsed+rowLines > lineBudget {
@@ -262,16 +264,16 @@ func (m Model) viewThemePreview() string {
 		Description: "Split pane side by side",
 		Aliases:     []string{"sh"},
 		Icon:        "",
-	}, s, false, m.showGlyphs, m.contentWidth()))
+	}, s, false, m.showGlyphs, m.innerWidth()))
 	b.WriteString("\n")
 	b.WriteString(renderRow(config.Command{
 		Title:       "Lazygit",
 		Description: "Open lazygit in a popup",
 		Aliases:     []string{"lg"},
 		Icon:        "󰊢",
-	}, s, false, m.showGlyphs, m.contentWidth()))
+	}, s, false, m.showGlyphs, m.innerWidth()))
 	b.WriteString("\n\n")
-	b.WriteString(s.selected.Width(m.contentWidth()).Render("  Selected row preview"))
+	b.WriteString(s.selected.Width(m.innerWidth()).Render("  Selected row preview"))
 	b.WriteString("\n\n")
 	b.WriteString(s.muted.Render("Up/Down or Left/Right previews themes, Enter/Esc returns"))
 	return m.renderFrame(b.String())
@@ -333,11 +335,19 @@ func (m *Model) ensureCursorVisible() {
 }
 
 func (m Model) commandLineBudget() int {
-	rows := m.contentHeight() - 4
+	rows := m.contentHeight() - 5
 	if rows < 1 {
 		return 1
 	}
 	return rows
+}
+
+func (m Model) innerWidth() int {
+	width := m.contentWidth() - horizontalPadding*2
+	if width < 1 {
+		return 1
+	}
+	return width
 }
 
 func (m Model) contentWidth() int {
@@ -358,7 +368,8 @@ func (m Model) contentHeight() int {
 
 func (m Model) renderFrame(content string) string {
 	s := m.styles
-	return s.frame.Width(m.contentWidth()).Height(m.contentHeight()).Render(content)
+	inner := s.root.Padding(0, horizontalPadding).Width(m.contentWidth()).Height(m.contentHeight()).Render(content)
+	return s.frame.Width(m.contentWidth()).Height(m.contentHeight()).Render(inner)
 }
 
 func (m Model) cursorVisible(matches []fuzzy.Match) bool {
