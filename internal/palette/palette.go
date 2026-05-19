@@ -68,7 +68,7 @@ func newStyles(t theme.Theme) styles {
 		selected:      lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedTitle: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedDesc:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
-		selectedChip:  lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)).Padding(0, 1),
+		selectedChip:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.ChipBG)).Padding(0, 1),
 		glyph:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.Background)),
 		selectedGlyph: lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		chip:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Chip)).Background(lipgloss.Color(t.ChipBG)).Padding(0, 1),
