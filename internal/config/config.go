@@ -16,6 +16,7 @@ type UI struct {
 	PopupHeight string `toml:"popup_height"`
 	Border      bool   `toml:"border"`
 	Theme       string `toml:"theme"`
+	Glyphs      bool   `toml:"glyphs"`
 }
 
 type Command struct {
@@ -46,6 +47,7 @@ func DefaultUI() UI {
 		PopupHeight: "80%",
 		Border:      true,
 		Theme:       "shades-of-purple",
+		Glyphs:      true,
 	}
 }
 

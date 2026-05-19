@@ -55,13 +55,14 @@ popup_width = "80%"
 popup_height = "80%"
 border = true
 theme = "shades-of-purple"
+glyphs = true
 
 [[commands]]
 title = "Lazygit"
 description = "Open lazygit in a popup"
 category = "Tools"
 aliases = ["lg"]
-icon = "git"
+icon = "󰊢"
 popup = "lazygit"
 popup_width = "95%"
 popup_height = "90%"
@@ -71,7 +72,7 @@ title = "Btop"
 description = "Open btop in a popup"
 category = "Tools"
 aliases = ["bt"]
-icon = "cpu"
+icon = "󰘚"
 popup = "btop"
 
 [[commands]]
@@ -83,6 +84,8 @@ tmux = "split-window -h -c '#{pane_current_path}'"
 ```
 
 `width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
+
+`icon` is rendered as a command glyph to the left of the command title. Omit `icon`, set it to an empty string, or set `glyphs = false` in `[ui]` to hide glyphs.
 
 The commander popup is launched without a native tmux border and draws its own themed border. The `border` setting is retained for popup actions and future launcher options.
 
@@ -119,6 +122,8 @@ query = "#ffffff"
 description = "#b4befe"
 empty = "#7c7f93"
 chip = "#94e2d5"
+chip_bg = "#313244"
+glyph = "#f5c2e7"
 selected_fg = "#ffffff"
 selected_bg = "#7c3aed"
 ```

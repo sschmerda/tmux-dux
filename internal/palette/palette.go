@@ -16,6 +16,7 @@ type Model struct {
 	activeTheme   theme.Theme
 	previewThemes []theme.Theme
 	previewIndex  int
+	showGlyphs    bool
 	styles        styles
 	mode          mode
 	query         string
@@ -46,6 +47,8 @@ type styles struct {
 	selectedTitle lipgloss.Style
 	selectedDesc  lipgloss.Style
 	selectedChip  lipgloss.Style
+	glyph         lipgloss.Style
+	selectedGlyph lipgloss.Style
 	chip          lipgloss.Style
 	muted         lipgloss.Style
 }
@@ -63,24 +66,27 @@ func newStyles(t theme.Theme) styles {
 		selected:      lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedTitle: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedDesc:  lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
-		selectedChip:  lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
-		chip:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Chip)).Background(lipgloss.Color(t.Background)),
+		selectedChip:  lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)).Padding(0, 1),
+		glyph:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.Background)),
+		selectedGlyph: lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
+		chip:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Chip)).Background(lipgloss.Color(t.ChipBG)).Padding(0, 1),
 		muted:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Background(lipgloss.Color(t.Background)),
 	}
 }
 
-func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme) Model {
+func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool) Model {
 	return Model{
 		commands:      commands,
 		activeTheme:   active,
 		previewThemes: previewThemes,
 		previewIndex:  previewIndex(previewThemes, active.Name),
+		showGlyphs:    showGlyphs,
 		styles:        newStyles(active),
 	}
 }
 
-func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme) (*config.Command, error) {
-	program := tea.NewProgram(New(commands, active, previewThemes), tea.WithAltScreen())
+func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool) (*config.Command, error) {
+	program := tea.NewProgram(New(commands, active, previewThemes, showGlyphs), tea.WithAltScreen())
 	finalModel, err := program.Run()
 	if err != nil {
 		return nil, err
@@ -216,7 +222,7 @@ func (m Model) View() string {
 
 		selected := rowIndex == m.cursor
 		contentWidth := m.contentWidth()
-		row := renderRow(cmd, s, selected)
+		row := renderRow(cmd, s, selected, m.showGlyphs)
 		rowLines := lipgloss.Height(row)
 		if linesUsed+rowLines > lineBudget {
 			break
@@ -255,14 +261,15 @@ func (m Model) viewThemePreview() string {
 		Title:       "Split Horizontal",
 		Description: "Split pane side by side",
 		Aliases:     []string{"sh"},
-	}, s, false))
+		Icon:        "",
+	}, s, false, m.showGlyphs))
 	b.WriteString("\n")
 	b.WriteString(renderRow(config.Command{
 		Title:       "Lazygit",
 		Description: "Open lazygit in a popup",
 		Aliases:     []string{"lg"},
-		Icon:        "git",
-	}, s, false))
+		Icon:        "󰊢",
+	}, s, false, m.showGlyphs))
 	b.WriteString("\n\n")
 	b.WriteString(s.selected.Width(m.contentWidth()).Render("  Selected row preview"))
 	b.WriteString("\n\n")
@@ -390,40 +397,28 @@ func commandRowLines(cmd config.Command) int {
 	return 1
 }
 
-func renderRow(cmd config.Command, s styles, selected bool) string {
-	icon := iconLabel(cmd.Icon)
-	title := strings.TrimSpace(icon + " " + cmd.Title)
-	meta := []string{}
-	for _, alias := range cmd.Aliases {
-		meta = append(meta, "#"+alias)
-	}
+func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool) string {
 	titleStyle := s.title
 	descStyle := s.desc
 	chipStyle := s.chip
+	glyphStyle := s.glyph
 	if selected {
 		titleStyle = s.selectedTitle
 		descStyle = s.selectedDesc
 		chipStyle = s.selectedChip
+		glyphStyle = s.selectedGlyph
 	}
-	line := "  " + titleStyle.Render(title)
-	if len(meta) > 0 {
-		line += chipStyle.Render(" " + strings.Join(meta, " "))
+	parts := []string{}
+	if showGlyphs && strings.TrimSpace(cmd.Icon) != "" {
+		parts = append(parts, glyphStyle.Render(cmd.Icon))
 	}
+	parts = append(parts, titleStyle.Render(cmd.Title))
+	for _, alias := range cmd.Aliases {
+		parts = append(parts, chipStyle.Render(alias))
+	}
+	line := "  " + strings.Join(parts, " ")
 	if cmd.Description != "" {
 		line += "\n    " + descStyle.Render(cmd.Description)
 	}
 	return line
-}
-
-func iconLabel(icon string) string {
-	switch icon {
-	case "git":
-		return "[git]"
-	case "cpu":
-		return "[cpu]"
-	case "":
-		return ""
-	default:
-		return "[" + icon + "]"
-	}
 }

@@ -28,6 +28,7 @@ func TestLoadFileParsesTOMLCommands(t *testing.T) {
 [ui]
 width = "60%"
 theme = "custom"
+glyphs = false
 
 [custom_theme]
 background = "#111111"
@@ -35,6 +36,8 @@ title = "#eeeeee"
 prompt = "#aaaaaa"
 query = "#bbbbbb"
 empty = "#cccccc"
+chip_bg = "#222222"
+glyph = "#dddddd"
 selected_bg = "#333333"
 
 [[commands]]
@@ -63,7 +66,10 @@ popup_height = "85%"
 	if cfg.UI.Theme != "custom" {
 		t.Fatalf("theme = %q, want custom", cfg.UI.Theme)
 	}
-	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.SelectedBG != "#333333" {
+	if cfg.UI.Glyphs {
+		t.Fatal("glyphs = true, want false")
+	}
+	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
 	}
 	if len(cfg.Commands) != 2 {

@@ -37,7 +37,7 @@ func main() {
 		}
 	}
 
-	selected, err := palette.Run(cfg.Commands, activeTheme, previewThemes(activeTheme))
+	selected, err := palette.Run(cfg.Commands, activeTheme, previewThemes(activeTheme), cfg.UI.Glyphs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tmux-commander: run palette: %v\n", err)
 		os.Exit(1)

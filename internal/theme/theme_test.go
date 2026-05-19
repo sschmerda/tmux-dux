@@ -12,7 +12,7 @@ func TestResolveDefaultsToShadesOfPurple(t *testing.T) {
 func TestResolveKnownThemes(t *testing.T) {
 	for _, name := range Names() {
 		got := Resolve(name)
-		if got.Name == "" || got.Background == "" || got.Title == "" || got.Prompt == "" || got.Query == "" || got.Empty == "" || got.SelectedBG == "" {
+		if got.Name == "" || got.Background == "" || got.Title == "" || got.Prompt == "" || got.Query == "" || got.Empty == "" || got.ChipBG == "" || got.Glyph == "" || got.SelectedBG == "" {
 			t.Fatalf("theme %q resolved incompletely: %#v", name, got)
 		}
 	}
@@ -32,12 +32,14 @@ func TestResolveWithCustomUsesCustomFields(t *testing.T) {
 		Prompt:     "#aaaaaa",
 		Query:      "#bbbbbb",
 		Empty:      "#cccccc",
+		ChipBG:     "#222222",
+		Glyph:      "#dddddd",
 		SelectedBG: "#333333",
 	})
 	if got.Name != "custom" {
 		t.Fatalf("theme = %q, want custom", got.Name)
 	}
-	if got.Background != "#111111" || got.Title != "#eeeeee" || got.Prompt != "#aaaaaa" || got.Query != "#bbbbbb" || got.Empty != "#cccccc" || got.SelectedBG != "#333333" {
+	if got.Background != "#111111" || got.Title != "#eeeeee" || got.Prompt != "#aaaaaa" || got.Query != "#bbbbbb" || got.Empty != "#cccccc" || got.ChipBG != "#222222" || got.Glyph != "#dddddd" || got.SelectedBG != "#333333" {
 		t.Fatalf("custom fields were not applied: %#v", got)
 	}
 	if got.Header != Default().Header {

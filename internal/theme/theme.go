@@ -13,6 +13,8 @@ type Theme struct {
 	Description string `toml:"description"`
 	Empty       string `toml:"empty"`
 	Chip        string `toml:"chip"`
+	ChipBG      string `toml:"chip_bg"`
+	Glyph       string `toml:"glyph"`
 	SelectedFG  string `toml:"selected_fg"`
 	SelectedBG  string `toml:"selected_bg"`
 }
@@ -35,6 +37,8 @@ func Resolve(name string) Theme {
 			Description: "#a6adc8",
 			Empty:       "#6c7086",
 			Chip:        "#94e2d5",
+			ChipBG:      "#313244",
+			Glyph:       "#f5c2e7",
 			SelectedFG:  "#cdd6f4",
 			SelectedBG:  "#313244",
 		}
@@ -50,6 +54,8 @@ func Resolve(name string) Theme {
 			Description: "#9aa5ce",
 			Empty:       "#565f89",
 			Chip:        "#7dcfff",
+			ChipBG:      "#283457",
+			Glyph:       "#7dcfff",
 			SelectedFG:  "#c0caf5",
 			SelectedBG:  "#283457",
 		}
@@ -65,6 +71,8 @@ func Resolve(name string) Theme {
 			Description: "#908caa",
 			Empty:       "#6e6a86",
 			Chip:        "#9ccfd8",
+			ChipBG:      "#403d52",
+			Glyph:       "#f6c177",
 			SelectedFG:  "#e0def4",
 			SelectedBG:  "#403d52",
 		}
@@ -80,6 +88,8 @@ func Resolve(name string) Theme {
 			Description: "#c8c093",
 			Empty:       "#727169",
 			Chip:        "#7aa89f",
+			ChipBG:      "#2d4f67",
+			Glyph:       "#ffa066",
 			SelectedFG:  "#dcd7ba",
 			SelectedBG:  "#2d4f67",
 		}
@@ -95,6 +105,8 @@ func Resolve(name string) Theme {
 			Description: "#b362ff",
 			Empty:       "#a599e9",
 			Chip:        "#9effff",
+			ChipBG:      "#6943ff",
+			Glyph:       "#ff9d00",
 			SelectedFG:  "#ffffff",
 			SelectedBG:  "#6943ff",
 		}
@@ -110,6 +122,8 @@ func Resolve(name string) Theme {
 			Description: "#839496",
 			Empty:       "#586e75",
 			Chip:        "#2aa198",
+			ChipBG:      "#073642",
+			Glyph:       "#cb4b16",
 			SelectedFG:  "#fdf6e3",
 			SelectedBG:  "#073642",
 		}
@@ -125,6 +139,8 @@ func Resolve(name string) Theme {
 			Description: "#bdae93",
 			Empty:       "#928374",
 			Chip:        "#8ec07c",
+			ChipBG:      "#504945",
+			Glyph:       "#fe8019",
 			SelectedFG:  "#fbf1c7",
 			SelectedBG:  "#504945",
 		}
@@ -165,6 +181,12 @@ func ResolveWithCustom(name string, custom Theme) Theme {
 	}
 	if custom.Chip != "" {
 		base.Chip = custom.Chip
+	}
+	if custom.ChipBG != "" {
+		base.ChipBG = custom.ChipBG
+	}
+	if custom.Glyph != "" {
+		base.Glyph = custom.Glyph
 	}
 	if custom.SelectedFG != "" {
 		base.SelectedFG = custom.SelectedFG
