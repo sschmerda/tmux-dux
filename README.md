@@ -172,6 +172,7 @@ Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI ex
 
 - Type to filter commands.
 - Use `Up` / `Down` or `Ctrl-P` / `Ctrl-N` to move.
+- Use `Tab` / `Shift-Tab` to jump between command categories.
 - Press `Enter` to select.
 - Press `Esc` or `Ctrl-C` to cancel.
 

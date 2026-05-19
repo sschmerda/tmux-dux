@@ -142,6 +142,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 			m.ensureCursorVisible()
+		case "tab":
+			m.moveToNextCategory()
+			m.ensureCursorVisible()
+		case "shift+tab":
+			m.moveToPreviousCategory()
+			m.ensureCursorVisible()
 		case "backspace", "ctrl+h":
 			if len(m.query) > 0 {
 				m.query = m.query[:len(m.query)-1]
@@ -308,6 +314,67 @@ func previewIndex(themes []theme.Theme, name string) int {
 		}
 	}
 	return 0
+}
+
+func (m *Model) moveToNextCategory() {
+	matches := fuzzy.Filter(m.commands, m.query)
+	m.cursor = nextCategoryIndex(matches, m.cursor)
+}
+
+func (m *Model) moveToPreviousCategory() {
+	matches := fuzzy.Filter(m.commands, m.query)
+	m.cursor = previousCategoryIndex(matches, m.cursor)
+}
+
+func nextCategoryIndex(matches []fuzzy.Match, cursor int) int {
+	if len(matches) == 0 {
+		return 0
+	}
+	cursor = clampCursor(cursor, len(matches))
+	current := matches[cursor].Command.Category
+	for i := cursor + 1; i < len(matches); i++ {
+		if matches[i].Command.Category != current {
+			return i
+		}
+	}
+	if matches[0].Command.Category == current {
+		return cursor
+	}
+	return 0
+}
+
+func previousCategoryIndex(matches []fuzzy.Match, cursor int) int {
+	if len(matches) == 0 {
+		return 0
+	}
+	cursor = clampCursor(cursor, len(matches))
+	currentStart := categoryStart(matches, cursor)
+	if currentStart == 0 {
+		if matches[len(matches)-1].Command.Category == matches[cursor].Command.Category {
+			return cursor
+		}
+		return categoryStart(matches, len(matches)-1)
+	}
+	return categoryStart(matches, currentStart-1)
+}
+
+func categoryStart(matches []fuzzy.Match, index int) int {
+	index = clampCursor(index, len(matches))
+	category := matches[index].Command.Category
+	for index > 0 && matches[index-1].Command.Category == category {
+		index--
+	}
+	return index
+}
+
+func clampCursor(cursor int, length int) int {
+	if cursor < 0 {
+		return 0
+	}
+	if cursor >= length {
+		return length - 1
+	}
+	return cursor
 }
 
 func (m *Model) ensureCursorVisible() {
