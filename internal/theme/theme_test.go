@@ -18,6 +18,18 @@ func TestResolveKnownThemes(t *testing.T) {
 	}
 }
 
+func TestBuiltInThemesKeepChipAndSelectionBackgroundsDistinct(t *testing.T) {
+	for _, name := range Names() {
+		got := Resolve(name)
+		if got.ChipBG == got.SelectedBG {
+			t.Fatalf("theme %q uses the same chip and selected background: %s", name, got.ChipBG)
+		}
+		if got.ChipBG == got.Background {
+			t.Fatalf("theme %q uses the same chip and main background: %s", name, got.ChipBG)
+		}
+	}
+}
+
 func TestResolveUnknownThemeUsesDefault(t *testing.T) {
 	got := Resolve("tokyo-night")
 	if got.Name != "shades-of-purple" {

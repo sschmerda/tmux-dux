@@ -241,9 +241,6 @@ func (m Model) View() string {
 		if linesUsed+rowLines > lineBudget {
 			break
 		}
-		if selected {
-			row = s.selected.Width(contentWidth).Render(row)
-		}
 		b.WriteString(row)
 		b.WriteString("\n")
 		linesUsed += rowLines
@@ -479,25 +476,11 @@ func commandRowLines(config.Command) int {
 }
 
 func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool, width int) string {
-	titleStyle := s.title
 	descStyle := s.desc
-	chipStyle := s.chip
-	glyphStyle := s.glyph
 	if selected {
-		titleStyle = s.selectedTitle
 		descStyle = s.selectedDesc
-		chipStyle = s.selectedChip
-		glyphStyle = s.selectedGlyph
 	}
-	parts := []string{}
-	if showGlyphs && strings.TrimSpace(cmd.Icon) != "" {
-		parts = append(parts, glyphStyle.Render(cmd.Icon))
-	}
-	parts = append(parts, titleStyle.Render(cmd.Title))
-	for _, alias := range cmd.Aliases {
-		parts = append(parts, chipStyle.Render(alias))
-	}
-	line := rowIndent(selected, s) + joinRowParts(parts, selected, s)
+	line := renderRowPrefix(cmd, s, selected, showGlyphs)
 	if cmd.Description != "" {
 		separator := " - "
 		budget := width - lipgloss.Width(line) - lipgloss.Width(separator)
@@ -505,15 +488,45 @@ func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool, wid
 			line += descStyle.Render(separator + truncate(cmd.Description, budget))
 		}
 	}
+	if selected {
+		return padSelectedRow(line, width, s)
+	}
 	return line
 }
 
-func joinRowParts(parts []string, selected bool, s styles) string {
-	separator := " "
+func renderRowPrefix(cmd config.Command, s styles, selected bool, showGlyphs bool) string {
+	titleStyle := s.title
+	chipStyle := s.chip
+	glyphStyle := s.glyph
+	spacerStyle := s.root
 	if selected {
-		separator = s.selected.Render(separator)
+		titleStyle = s.selectedTitle
+		chipStyle = s.selectedChip
+		glyphStyle = s.selectedGlyph
+		spacerStyle = s.selected
 	}
-	return strings.Join(parts, separator)
+
+	var b strings.Builder
+	b.WriteString(rowIndent(selected, s))
+	if showGlyphs && strings.TrimSpace(cmd.Icon) != "" {
+		b.WriteString(renderRowPart(cmd.Icon, glyphStyle, true))
+	}
+	hasAliases := len(cmd.Aliases) > 0
+	b.WriteString(renderRowPart(cmd.Title, titleStyle, hasAliases))
+	for i, alias := range cmd.Aliases {
+		b.WriteString(chipStyle.Render(alias))
+		if i < len(cmd.Aliases)-1 {
+			b.WriteString(spacerStyle.Render(" "))
+		}
+	}
+	return b.String()
+}
+
+func renderRowPart(value string, style lipgloss.Style, withTrailingSpace bool) string {
+	if withTrailingSpace {
+		return style.Width(lipgloss.Width(value) + 1).Render(value)
+	}
+	return style.Render(value)
 }
 
 func rowIndent(selected bool, s styles) string {
@@ -522,6 +535,14 @@ func rowIndent(selected bool, s styles) string {
 		return s.selected.Render(indent)
 	}
 	return indent
+}
+
+func padSelectedRow(line string, width int, s styles) string {
+	fill := width - lipgloss.Width(line)
+	if fill <= 0 {
+		return line
+	}
+	return line + s.selected.Render(strings.Repeat(" ", fill))
 }
 
 func truncate(value string, maxWidth int) string {
