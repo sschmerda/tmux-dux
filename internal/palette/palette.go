@@ -491,7 +491,7 @@ func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool, wid
 	for _, alias := range cmd.Aliases {
 		parts = append(parts, chipStyle.Render(alias))
 	}
-	line := "  " + strings.Join(parts, " ")
+	line := rowIndent(selected, s) + joinRowParts(parts, selected, s)
 	if cmd.Description != "" {
 		separator := " - "
 		budget := width - lipgloss.Width(line) - lipgloss.Width(separator)
@@ -500,6 +500,22 @@ func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool, wid
 		}
 	}
 	return line
+}
+
+func joinRowParts(parts []string, selected bool, s styles) string {
+	separator := " "
+	if selected {
+		separator = s.selected.Render(separator)
+	}
+	return strings.Join(parts, separator)
+}
+
+func rowIndent(selected bool, s styles) string {
+	indent := "  "
+	if selected {
+		return s.selected.Render(indent)
+	}
+	return indent
 }
 
 func truncate(value string, maxWidth int) string {
