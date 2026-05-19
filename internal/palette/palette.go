@@ -259,8 +259,8 @@ func (m Model) viewThemePreview() string {
 	s := m.styles
 	current := m.previewThemes[m.previewIndex]
 	var b strings.Builder
-	b.WriteString(s.title.Render("Theme Preview"))
-	b.WriteString("\n")
+	b.WriteString(m.renderSubviewHeader("Theme Preview"))
+	b.WriteString("\n\n")
 	b.WriteString(s.prompt.Render("Theme: "))
 	b.WriteString(s.query.Render(current.Name))
 	b.WriteString("\n")
@@ -286,6 +286,20 @@ func (m Model) viewThemePreview() string {
 	b.WriteString("\n\n")
 	b.WriteString(s.muted.Render("Up/Down or Left/Right previews themes, Enter/Esc returns"))
 	return m.renderFrame(b.String())
+}
+
+func (m Model) renderSubviewHeader(title string) string {
+	label := " " + title + " "
+	width := m.innerWidth()
+	if lipgloss.Width(label) >= width {
+		return m.styles.header.Width(width).Align(lipgloss.Center).Render(title)
+	}
+
+	left := (width - lipgloss.Width(label)) / 2
+	right := width - lipgloss.Width(label) - left
+	return m.styles.muted.Render(strings.Repeat("─", left)) +
+		m.styles.header.Render(label) +
+		m.styles.muted.Render(strings.Repeat("─", right))
 }
 
 func (m *Model) previousTheme() {
