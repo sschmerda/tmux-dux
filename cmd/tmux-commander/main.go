@@ -37,16 +37,16 @@ func main() {
 		}
 	}
 
-	selected, err := palette.Run(cfg.Commands, activeTheme, previewThemes(activeTheme), cfg.UI.Glyphs)
+	result, err := palette.Run(cfg.Commands, activeTheme, previewThemes(activeTheme), cfg.UI.Glyphs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tmux-commander: run palette: %v\n", err)
 		os.Exit(1)
 	}
-	if selected == nil {
+	if result.Command == nil {
 		return
 	}
 
-	action, err := actions.Build(*selected, cfg.UI, activeTheme)
+	action, err := actions.Build(*result.Command, cfg.UI, result.Theme)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tmux-commander: build action: %v\n", err)
 		os.Exit(1)

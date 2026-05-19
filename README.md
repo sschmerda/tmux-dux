@@ -136,7 +136,7 @@ List valid theme names from the binary:
 tmux-commander themes
 ```
 
-The built-in `Preview Themes` palette command opens an in-app preview in the current popup. Use `Up` / `Down` or `Left` / `Right` to cycle themes, then `Enter` or `Esc` to return to the command list. The preview does not write config; it shows the `theme = "..."` value to set.
+The built-in `Preview Themes` palette command opens an in-app preview in the current popup. Use `Up` / `Down` or `Left` / `Right` to cycle themes, then `Enter` or `Esc` to return to the command list. The selected preview theme stays active until this `tmux-commander` popup exits, including for popup actions launched from that session. The preview does not write config; it shows the `theme = "..."` value to set permanently.
 
 ## Actions
 

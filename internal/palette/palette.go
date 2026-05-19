@@ -27,6 +27,11 @@ type Model struct {
 	height        int
 }
 
+type Result struct {
+	Command *config.Command
+	Theme   theme.Theme
+}
+
 type mode int
 
 const (
@@ -87,17 +92,17 @@ func New(commands []config.Command, active theme.Theme, previewThemes []theme.Th
 	}
 }
 
-func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool) (*config.Command, error) {
+func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool) (Result, error) {
 	program := tea.NewProgram(New(commands, active, previewThemes, showGlyphs), tea.WithAltScreen())
 	finalModel, err := program.Run()
 	if err != nil {
-		return nil, err
+		return Result{}, err
 	}
 	model, ok := finalModel.(Model)
 	if !ok {
-		return nil, nil
+		return Result{Theme: active}, nil
 	}
-	return model.selected, nil
+	return Result{Command: model.selected, Theme: model.activeTheme}, nil
 }
 
 func (m Model) Init() tea.Cmd {
@@ -171,6 +176,7 @@ func (m Model) updateThemePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case "esc", "enter":
 		m.mode = modeCommands
+		m.activeTheme = m.previewThemes[m.previewIndex]
 		m.styles = newStyles(m.activeTheme)
 	case "up", "left", "ctrl+p":
 		m.previousTheme()
