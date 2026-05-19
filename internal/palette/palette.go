@@ -222,7 +222,7 @@ func (m Model) View() string {
 
 		selected := rowIndex == m.cursor
 		contentWidth := m.contentWidth()
-		row := renderRow(cmd, s, selected, m.showGlyphs)
+		row := renderRow(cmd, s, selected, m.showGlyphs, contentWidth)
 		rowLines := lipgloss.Height(row)
 		if linesUsed+rowLines > lineBudget {
 			break
@@ -262,14 +262,14 @@ func (m Model) viewThemePreview() string {
 		Description: "Split pane side by side",
 		Aliases:     []string{"sh"},
 		Icon:        "",
-	}, s, false, m.showGlyphs))
+	}, s, false, m.showGlyphs, m.contentWidth()))
 	b.WriteString("\n")
 	b.WriteString(renderRow(config.Command{
 		Title:       "Lazygit",
 		Description: "Open lazygit in a popup",
 		Aliases:     []string{"lg"},
 		Icon:        "󰊢",
-	}, s, false, m.showGlyphs))
+	}, s, false, m.showGlyphs, m.contentWidth()))
 	b.WriteString("\n\n")
 	b.WriteString(s.selected.Width(m.contentWidth()).Render("  Selected row preview"))
 	b.WriteString("\n\n")
@@ -390,14 +390,11 @@ func (m Model) cursorVisible(matches []fuzzy.Match) bool {
 	return false
 }
 
-func commandRowLines(cmd config.Command) int {
-	if cmd.Description != "" {
-		return 2
-	}
+func commandRowLines(config.Command) int {
 	return 1
 }
 
-func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool) string {
+func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool, width int) string {
 	titleStyle := s.title
 	descStyle := s.desc
 	chipStyle := s.chip
@@ -418,7 +415,28 @@ func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool) str
 	}
 	line := "  " + strings.Join(parts, " ")
 	if cmd.Description != "" {
-		line += "\n    " + descStyle.Render(cmd.Description)
+		separator := " - "
+		budget := width - lipgloss.Width(line) - lipgloss.Width(separator)
+		if budget > 0 {
+			line += descStyle.Render(separator + truncate(cmd.Description, budget))
+		}
 	}
 	return line
+}
+
+func truncate(value string, maxWidth int) string {
+	if maxWidth < 1 {
+		return ""
+	}
+	if lipgloss.Width(value) <= maxWidth {
+		return value
+	}
+	if maxWidth == 1 {
+		return "…"
+	}
+	runes := []rune(value)
+	for len(runes) > 0 && lipgloss.Width(string(runes)+"…") > maxWidth {
+		runes = runes[:len(runes)-1]
+	}
+	return string(runes) + "…"
 }
