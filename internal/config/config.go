@@ -41,7 +41,7 @@ type Config struct {
 
 func DefaultUI() UI {
 	return UI{
-		Width:       "75%",
+		Width:       "40%",
 		Height:      "70%",
 		PopupWidth:  "80%",
 		PopupHeight: "80%",

@@ -14,7 +14,7 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if got := len(cfg.Commands); got != 16 {
 		t.Fatalf("default command count = %d, want 16", got)
 	}
-	if cfg.UI.Width != "75%" || cfg.UI.PopupWidth != "80%" {
+	if cfg.UI.Width != "40%" || cfg.UI.PopupWidth != "80%" {
 		t.Fatalf("unexpected default UI: %#v", cfg.UI)
 	}
 	if cfg.UI.Theme != "shades-of-purple" {

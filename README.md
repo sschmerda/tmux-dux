@@ -49,7 +49,7 @@ If no config file exists, built-in defaults are used.
 
 ```toml
 [ui]
-width = "75%"
+width = "40%"
 height = "70%"
 popup_width = "80%"
 popup_height = "80%"
