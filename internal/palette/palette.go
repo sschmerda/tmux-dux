@@ -257,14 +257,12 @@ func (m Model) View() string {
 
 func (m Model) viewThemePreview() string {
 	s := m.styles
-	current := m.previewThemes[m.previewIndex]
 	var b strings.Builder
 	b.WriteString(m.renderSubviewHeader("Theme Preview"))
 	b.WriteString("\n\n")
-	b.WriteString(s.prompt.Render("Theme: "))
-	b.WriteString(s.query.Render(current.Name))
+	b.WriteString(s.header.Render("Included Themes"))
 	b.WriteString("\n")
-	b.WriteString(s.muted.Render(`Set with: theme = "` + current.Name + `"`))
+	b.WriteString(m.renderThemeList())
 	b.WriteString("\n\n")
 	b.WriteString(s.header.Render("Sample Commands"))
 	b.WriteString("\n")
@@ -300,6 +298,26 @@ func (m Model) renderSubviewHeader(title string) string {
 	return m.styles.muted.Render(strings.Repeat("─", left)) +
 		m.styles.header.Render(label) +
 		m.styles.muted.Render(strings.Repeat("─", right))
+}
+
+func (m Model) renderThemeList() string {
+	if len(m.previewThemes) == 0 {
+		return m.styles.empty.Render("No themes available")
+	}
+
+	var b strings.Builder
+	for i, previewTheme := range m.previewThemes {
+		if i > 0 {
+			b.WriteString("\n")
+		}
+		label := "  " + previewTheme.Name
+		if i == m.previewIndex {
+			b.WriteString(m.styles.selected.Width(m.innerWidth()).Render("  " + previewTheme.Name))
+			continue
+		}
+		b.WriteString(m.styles.title.Render(label))
+	}
+	return b.String()
 }
 
 func (m *Model) previousTheme() {
