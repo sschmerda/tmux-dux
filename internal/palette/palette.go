@@ -60,6 +60,9 @@ type styles struct {
 	selectedTitle lipgloss.Style
 	selectedDesc  lipgloss.Style
 	selectedChip  lipgloss.Style
+	match         lipgloss.Style
+	selectedMatch lipgloss.Style
+	chipMatch     lipgloss.Style
 	glyph         lipgloss.Style
 	selectedGlyph lipgloss.Style
 	chip          lipgloss.Style
@@ -79,10 +82,13 @@ func newStyles(t theme.Theme) styles {
 		selected:      lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedTitle: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedDesc:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
-		selectedChip:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.ChipBG)).Padding(0, 1),
+		selectedChip:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.ChipBG)),
+		match:         lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Header)).Background(lipgloss.Color(t.Background)),
+		selectedMatch: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.SelectedBG)),
+		chipMatch:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.ChipBG)),
 		glyph:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.Background)),
 		selectedGlyph: lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
-		chip:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Chip)).Background(lipgloss.Color(t.ChipBG)).Padding(0, 1),
+		chip:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Chip)).Background(lipgloss.Color(t.ChipBG)),
 		muted:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Background(lipgloss.Color(t.Background)),
 	}
 }
@@ -248,7 +254,7 @@ func (m Model) View() string {
 
 		selected := rowIndex == m.cursor
 		contentWidth := m.innerWidth()
-		row := renderRow(cmd, s, selected, m.showGlyphs, contentWidth)
+		row := renderRow(match, s, selected, m.showGlyphs, contentWidth)
 		rowLines := lipgloss.Height(row)
 		if linesUsed+rowLines > lineBudget {
 			break
@@ -278,14 +284,14 @@ func (m Model) viewThemePreview() string {
 	b.WriteString("\n\n")
 	b.WriteString(s.header.Render("Sample Commands"))
 	b.WriteString("\n")
-	b.WriteString(renderRow(config.Command{
+	b.WriteString(renderCommandRow(config.Command{
 		Title:       "Split Horizontal",
 		Description: "Split pane side by side",
 		Aliases:     []string{"sh"},
 		Icon:        "",
 	}, s, false, m.showGlyphs, m.innerWidth()))
 	b.WriteString("\n")
-	b.WriteString(renderRow(config.Command{
+	b.WriteString(renderCommandRow(config.Command{
 		Title:       "Lazygit",
 		Description: "Open lazygit in a popup",
 		Aliases:     []string{"lg"},
@@ -554,12 +560,17 @@ func commandRowLines(config.Command) int {
 	return 1
 }
 
-func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool, width int) string {
+func renderCommandRow(cmd config.Command, s styles, selected bool, showGlyphs bool, width int) string {
+	return renderRow(fuzzy.Match{Command: cmd}, s, selected, showGlyphs, width)
+}
+
+func renderRow(match fuzzy.Match, s styles, selected bool, showGlyphs bool, width int) string {
+	cmd := match.Command
 	descStyle := s.desc
 	if selected {
 		descStyle = s.selectedDesc
 	}
-	line := renderRowPrefix(cmd, s, selected, showGlyphs)
+	line := renderRowPrefix(match, s, selected, showGlyphs)
 	if cmd.Description != "" {
 		separator := " - "
 		budget := width - lipgloss.Width(line) - lipgloss.Width(separator)
@@ -573,15 +584,19 @@ func renderRow(cmd config.Command, s styles, selected bool, showGlyphs bool, wid
 	return line
 }
 
-func renderRowPrefix(cmd config.Command, s styles, selected bool, showGlyphs bool) string {
+func renderRowPrefix(match fuzzy.Match, s styles, selected bool, showGlyphs bool) string {
+	cmd := match.Command
 	titleStyle := s.title
 	chipStyle := s.chip
 	glyphStyle := s.glyph
+	matchStyle := s.match
+	chipMatchStyle := s.chipMatch
 	spacerStyle := s.root
 	if selected {
 		titleStyle = s.selectedTitle
 		chipStyle = s.selectedChip
 		glyphStyle = s.selectedGlyph
+		matchStyle = s.selectedMatch
 		spacerStyle = s.selected
 	}
 
@@ -591,9 +606,9 @@ func renderRowPrefix(cmd config.Command, s styles, selected bool, showGlyphs boo
 		b.WriteString(renderRowPart(cmd.Icon, glyphStyle, true))
 	}
 	hasAliases := len(cmd.Aliases) > 0
-	b.WriteString(renderRowPart(cmd.Title, titleStyle, hasAliases))
+	b.WriteString(renderMatchedRowPart(cmd.Title, titleStyle, matchStyle, match.TitleIndexes, hasAliases))
 	for i, alias := range cmd.Aliases {
-		b.WriteString(chipStyle.Render(alias))
+		b.WriteString(renderAliasChip(alias, chipStyle, chipMatchStyle, match.AliasIndexes[alias]))
 		if i < len(cmd.Aliases)-1 {
 			b.WriteString(spacerStyle.Render(" "))
 		}
@@ -606,6 +621,40 @@ func renderRowPart(value string, style lipgloss.Style, withTrailingSpace bool) s
 		return style.Width(lipgloss.Width(value) + 1).Render(value)
 	}
 	return style.Render(value)
+}
+
+func renderMatchedRowPart(value string, style lipgloss.Style, matchStyle lipgloss.Style, indexes []int, withTrailingSpace bool) string {
+	rendered := renderMatchedText(value, style, matchStyle, indexes)
+	if withTrailingSpace {
+		rendered += style.Render(" ")
+	}
+	return rendered
+}
+
+func renderAliasChip(alias string, style lipgloss.Style, matchStyle lipgloss.Style, indexes []int) string {
+	return style.Render(" ") + renderMatchedText(alias, style, matchStyle, indexes) + style.Render(" ")
+}
+
+func renderMatchedText(value string, style lipgloss.Style, matchStyle lipgloss.Style, indexes []int) string {
+	if len(indexes) == 0 {
+		return style.Render(value)
+	}
+
+	matched := map[int]bool{}
+	for _, index := range indexes {
+		matched[index] = true
+	}
+
+	var b strings.Builder
+	for index, r := range value {
+		part := string(r)
+		if matched[index] {
+			b.WriteString(matchStyle.Render(part))
+			continue
+		}
+		b.WriteString(style.Render(part))
+	}
+	return b.String()
 }
 
 func rowIndent(selected bool, s styles) string {

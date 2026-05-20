@@ -1,11 +1,12 @@
 module github.com/stefanschmerda/tmux-commander
 
-go 1.24.0
+go 1.24.5
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/sahilm/fuzzy v0.1.2
 )
 
 require (
