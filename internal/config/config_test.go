@@ -33,11 +33,19 @@ glyphs = false
 [custom_theme]
 background = "#111111"
 title = "#eeeeee"
+commander_border = "#ddddff"
+prompt_border = "#ccccff"
 prompt = "#aaaaaa"
 query = "#bbbbbb"
+search_bg = "#444444"
+search_fg = "#eeeeff"
 empty = "#cccccc"
 chip_bg = "#222222"
+selected_chip = "#ffccaa"
+selected_chip_bg = "#332211"
 glyph = "#dddddd"
+match_fg = "#ffeeaa"
+selected_match_fg = "#aaffee"
 selected_bg = "#333333"
 
 [[commands]]
@@ -69,7 +77,7 @@ popup_height = "85%"
 	if cfg.UI.Glyphs {
 		t.Fatal("glyphs = true, want false")
 	}
-	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.SelectedBG != "#333333" {
+	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.CommanderBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
 	}
 	if len(cfg.Commands) != 2 {

@@ -14,7 +14,7 @@ func TestPopupCommand(t *testing.T) {
 
 func TestPopupArgs(t *testing.T) {
 	got := PopupArgs("tmux-commander", "75%", "70%", true, theme.Resolve("shades-of-purple"))
-	want := []string{"display-popup", "-E", "-s", "fg=#ffffff,bg=#2d2b55", "-S", "fg=#fad000", "-w", "75%", "-h", "70%", "tmux-commander"}
+	want := []string{"display-popup", "-E", "-s", "fg=#ffffff,bg=#2d2b55", "-S", "fg=#d7d3ff,bg=#2d2b55", "-w", "75%", "-h", "70%", "tmux-commander"}
 	if len(got) != len(want) {
 		t.Fatalf("arg count = %d, want %d: %#v", len(got), len(want), got)
 	}
@@ -27,7 +27,7 @@ func TestPopupArgs(t *testing.T) {
 
 func TestPopupArgsWithoutBorder(t *testing.T) {
 	got := PopupArgs("tmux-commander", "75%", "70%", false, theme.Resolve("shades-of-purple"))
-	want := []string{"display-popup", "-E", "-B", "-s", "fg=#ffffff,bg=#2d2b55", "-S", "fg=#fad000", "-w", "75%", "-h", "70%", "tmux-commander"}
+	want := []string{"display-popup", "-E", "-B", "-s", "fg=#ffffff,bg=#2d2b55", "-S", "fg=#d7d3ff,bg=#2d2b55", "-w", "75%", "-h", "70%", "tmux-commander"}
 	if len(got) != len(want) {
 		t.Fatalf("arg count = %d, want %d: %#v", len(got), len(want), got)
 	}

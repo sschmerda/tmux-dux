@@ -72,7 +72,7 @@ type styles struct {
 func newStyles(t theme.Theme) styles {
 	return styles{
 		root:          lipgloss.NewStyle().Background(lipgloss.Color(t.Background)),
-		frame:         lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(t.Header)).BorderBackground(lipgloss.Color(t.Background)).Background(lipgloss.Color(t.Background)),
+		frame:         lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(t.CommanderBorder)).BorderBackground(lipgloss.Color(t.Background)).Background(lipgloss.Color(t.Background)),
 		title:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Title)).Background(lipgloss.Color(t.Background)),
 		header:        lipgloss.NewStyle().Foreground(lipgloss.Color(t.Header)).Background(lipgloss.Color(t.Background)).Bold(true),
 		desc:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Description)).Background(lipgloss.Color(t.Background)),
@@ -82,10 +82,10 @@ func newStyles(t theme.Theme) styles {
 		selected:      lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedTitle: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		selectedDesc:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
-		selectedChip:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.ChipBG)),
-		match:         lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Header)).Background(lipgloss.Color(t.Background)),
-		selectedMatch: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.SelectedBG)),
-		chipMatch:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.ChipBG)),
+		selectedChip:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedChip)).Background(lipgloss.Color(t.SelectedChipBG)),
+		match:         lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.MatchFG)).Background(lipgloss.Color(t.Background)),
+		selectedMatch: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.SelectedMatchFG)).Background(lipgloss.Color(t.SelectedBG)),
+		chipMatch:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(t.MatchFG)).Background(lipgloss.Color(t.ChipBG)),
 		glyph:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Glyph)).Background(lipgloss.Color(t.Background)),
 		selectedGlyph: lipgloss.NewStyle().Foreground(lipgloss.Color(t.SelectedFG)).Background(lipgloss.Color(t.SelectedBG)),
 		chip:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Chip)).Background(lipgloss.Color(t.ChipBG)),
@@ -464,14 +464,14 @@ func (m Model) commandLineBudget() int {
 
 func (m Model) renderSearchBox() string {
 	width := m.innerWidth()
-	fill := m.activeTheme.SelectedBG
+	fill := m.activeTheme.SearchBG
 	contentWidth := width - 4
 	if contentWidth < 1 {
 		contentWidth = 1
 	}
 
 	value := m.query
-	valueStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.SelectedFG)).Background(lipgloss.Color(fill))
+	valueStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.SearchFG)).Background(lipgloss.Color(fill))
 
 	cursor := " "
 	if m.caretVisible {
@@ -490,7 +490,7 @@ func (m Model) renderSearchBox() string {
 	return lipgloss.NewStyle().
 		Width(width-2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(m.activeTheme.Header)).
+		BorderForeground(lipgloss.Color(m.activeTheme.PromptBorder)).
 		BorderBackground(lipgloss.Color(m.activeTheme.Background)).
 		Background(lipgloss.Color(fill)).
 		Padding(0, 1).

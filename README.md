@@ -115,20 +115,54 @@ theme = "custom"
 [custom_theme]
 background = "#101018"
 title = "#ffffff"
+commander_border = "#ffffff"
+prompt_border = "#ffffff"
 header = "#ffcc66"
 muted = "#7c7f93"
 prompt = "#ffcc66"
 query = "#ffffff"
+search_bg = "#7c3aed"
+search_fg = "#ffffff"
 description = "#b4befe"
 empty = "#7c7f93"
 chip = "#94e2d5"
 chip_bg = "#313244"
+selected_chip = "#f5c2e7"
+selected_chip_bg = "#313244"
 glyph = "#f5c2e7"
+match_fg = "#ffcc66"
+selected_match_fg = "#f5c2e7"
 selected_fg = "#ffffff"
 selected_bg = "#7c3aed"
 ```
 
 Any omitted custom theme field falls back to the default `shades-of-purple` value.
+
+Custom theme fields:
+
+| Field | Controls |
+| --- | --- |
+| `background` | Main commander background and spawned popup background. |
+| `title` | Command titles and title-like text. |
+| `commander_border` | Outer commander frame and spawned popup border. |
+| `prompt_border` | Search prompt box border. |
+| `header` | Category headers and normal fuzzy match highlights. |
+| `muted` | Secondary muted UI text. |
+| `prompt` | Prompt-colored text outside the search box. |
+| `query` | General query-colored text and spawned popup foreground. |
+| `search_bg` | Search prompt box fill. |
+| `search_fg` | Typed search query text. |
+| `description` | Command descriptions. |
+| `empty` | Empty-state text. |
+| `chip` | Alias chip text in normal rows. |
+| `chip_bg` | Alias chip background in normal rows. |
+| `selected_chip` | Alias chip text in the selected row. |
+| `selected_chip_bg` | Alias chip background in the selected row. |
+| `glyph` | Command glyphs and search prompt glyph. |
+| `match_fg` | Fuzzy match highlight in normal rows and alias chips. |
+| `selected_match_fg` | Fuzzy match highlight in the selected row. |
+| `selected_fg` | Selected command text and selected glyphs. |
+| `selected_bg` | Selected command row background. |
 
 List valid theme names from the binary:
 

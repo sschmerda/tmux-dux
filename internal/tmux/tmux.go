@@ -46,7 +46,7 @@ func PopupStyle(t theme.Theme) string {
 }
 
 func PopupBorderStyle(t theme.Theme) string {
-	return style(t.Header, "")
+	return style(t.CommanderBorder, t.Background)
 }
 
 func style(fg string, bg string) string {
