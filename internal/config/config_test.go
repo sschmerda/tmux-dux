@@ -54,7 +54,8 @@ description = "Tail logs"
 category = "Tools"
 aliases = ["log", "tail"]
 icon = "file"
-popup = "tail -f app.log"
+action = "popup"
+command = "tail -f app.log"
 popup_width = "95%"
 popup_height = "85%"
 `
@@ -83,8 +84,8 @@ popup_height = "85%"
 	if len(cfg.Commands) != 2 {
 		t.Fatalf("command count = %d, want 2", len(cfg.Commands))
 	}
-	if cfg.Commands[0].Popup != "tail -f app.log" {
-		t.Fatalf("popup = %q", cfg.Commands[0].Popup)
+	if cfg.Commands[0].Action != "popup" || cfg.Commands[0].Command != "tail -f app.log" {
+		t.Fatalf("action command = %q %q", cfg.Commands[0].Action, cfg.Commands[0].Command)
 	}
 	if cfg.Commands[0].PopupWidth != "95%" || cfg.Commands[0].PopupHeight != "85%" {
 		t.Fatalf("popup size = %q x %q", cfg.Commands[0].PopupWidth, cfg.Commands[0].PopupHeight)
@@ -103,6 +104,36 @@ func TestPathUsesXDGConfigHome(t *testing.T) {
 	want := filepath.Join("/tmp/config-root", "tmux-commander", "config.toml")
 	if path != want {
 		t.Fatalf("path = %q, want %q", path, want)
+	}
+}
+
+func TestLoadFileRejectsDeprecatedActionFields(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[[commands]]
+title = "Old"
+tmux = "display-panes"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := LoadFile(path); err == nil {
+		t.Fatal("LoadFile returned nil error")
+	}
+}
+
+func TestLoadFileRejectsCommandWithoutActionCommandPair(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[[commands]]
+title = "Broken"
+action = "popup"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := LoadFile(path); err == nil {
+		t.Fatal("LoadFile returned nil error")
 	}
 }
 

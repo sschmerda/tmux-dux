@@ -63,7 +63,8 @@ description = "Open lazygit in a popup"
 category = "Tools"
 aliases = ["lg"]
 icon = "󰊢"
-popup = "lazygit"
+action = "popup"
+command = "lazygit"
 popup_width = "95%"
 popup_height = "90%"
 
@@ -73,14 +74,16 @@ description = "Open btop in a popup"
 category = "Tools"
 aliases = ["bt"]
 icon = "󰘚"
-popup = "btop"
+action = "popup"
+command = "btop"
 
 [[commands]]
 title = "Split Horizontal"
 description = "Split pane side by side"
 category = "Panes"
 aliases = ["sh"]
-tmux = "split-window -h -c '#{pane_current_path}'"
+action = "tmux"
+command = "split-window -h -c '#{pane_current_path}'"
 ```
 
 `width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
@@ -110,9 +113,8 @@ The commander popup is launched without a native tmux border and draws its own t
 | `category` | No | Group header used when the query is empty, and a weak fuzzy-match field while filtering. |
 | `aliases` | No | Short searchable abbreviations rendered as chips. |
 | `icon` | No | Glyph shown to the left of the command title when `[ui].glyphs` is true. |
-| `tmux` | One action required | Runs `tmux <value>` after the palette exits. |
-| `shell` | One action required | Runs the value through the user's shell after the palette exits. |
-| `popup` | One action required | Opens a spawned tmux popup running the value. |
+| `action` | Yes | Dispatch type. Must be `tmux`, `shell`, or `popup`. |
+| `command` | Yes | Command string used by the selected `action`. |
 | `popup_width` | No | Per-command width override for `popup` actions. |
 | `popup_height` | No | Per-command height override for `popup` actions. |
 
@@ -201,24 +203,27 @@ The built-in `Preview Themes` palette command opens an in-app preview in the cur
 
 ## Actions
 
-Each command must define exactly one action field.
+Each command must define an `action` and a `command`.
 
-`tmux` runs a tmux command after the palette exits:
+`action = "tmux"` runs `tmux <command>` after the palette exits:
 
 ```toml
-tmux = "split-window -h -c '#{pane_current_path}'"
+action = "tmux"
+command = "split-window -h -c '#{pane_current_path}'"
 ```
 
-`shell` runs a shell command after the palette exits:
+`action = "shell"` runs the command through the user's shell after the palette exits:
 
 ```toml
-shell = "open https://github.com"
+action = "shell"
+command = "open https://github.com"
 ```
 
-`popup` opens another tmux popup after the palette exits:
+`action = "popup"` opens another tmux popup after the palette exits:
 
 ```toml
-popup = "lazygit"
+action = "popup"
+command = "lazygit"
 popup_width = "95%"
 popup_height = "90%"
 ```

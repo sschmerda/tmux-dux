@@ -10,7 +10,8 @@ func DefaultCommands() []Command {
 			Category:    "Panes",
 			Aliases:     []string{"fp"},
 			Icon:        "󰓩",
-			Tmux:        "display-panes",
+			Action:      "tmux",
+			Command:     "display-panes",
 		},
 		{
 			Title:       "Split Horizontal",
@@ -18,7 +19,8 @@ func DefaultCommands() []Command {
 			Category:    "Panes",
 			Aliases:     []string{"sh"},
 			Icon:        "",
-			Tmux:        "split-window -h -c '#{pane_current_path}'",
+			Action:      "tmux",
+			Command:     "split-window -h -c '#{pane_current_path}'",
 		},
 		{
 			Title:       "Split Vertical",
@@ -26,7 +28,8 @@ func DefaultCommands() []Command {
 			Category:    "Panes",
 			Aliases:     []string{"sv"},
 			Icon:        "",
-			Tmux:        "split-window -v -c '#{pane_current_path}'",
+			Action:      "tmux",
+			Command:     "split-window -v -c '#{pane_current_path}'",
 		},
 		{
 			Title:       "Close Pane",
@@ -34,7 +37,8 @@ func DefaultCommands() []Command {
 			Category:    "Panes",
 			Aliases:     []string{"kp"},
 			Icon:        "󰅖",
-			Tmux:        "kill-pane",
+			Action:      "tmux",
+			Command:     "kill-pane",
 		},
 		{
 			Title:       "Zoom / Unzoom",
@@ -42,7 +46,8 @@ func DefaultCommands() []Command {
 			Category:    "Panes",
 			Aliases:     []string{"z"},
 			Icon:        "󰍉",
-			Tmux:        "resize-pane -Z",
+			Action:      "tmux",
+			Command:     "resize-pane -Z",
 		},
 		{
 			Title:       "New Window",
@@ -50,7 +55,8 @@ func DefaultCommands() []Command {
 			Category:    "Windows",
 			Aliases:     []string{"nw"},
 			Icon:        "󰖯",
-			Tmux:        "new-window -c '#{pane_current_path}'",
+			Action:      "tmux",
+			Command:     "new-window -c '#{pane_current_path}'",
 		},
 		{
 			Title:       "Rename Window",
@@ -58,7 +64,8 @@ func DefaultCommands() []Command {
 			Category:    "Windows",
 			Aliases:     []string{"rw"},
 			Icon:        "󰑕",
-			Tmux:        "command-prompt -I '#W' 'rename-window -- %1'",
+			Action:      "tmux",
+			Command:     "command-prompt -I '#W' 'rename-window -- %1'",
 		},
 		{
 			Title:       "Close Window",
@@ -66,7 +73,8 @@ func DefaultCommands() []Command {
 			Category:    "Windows",
 			Aliases:     []string{"kw"},
 			Icon:        "󰖭",
-			Tmux:        "kill-window",
+			Action:      "tmux",
+			Command:     "kill-window",
 		},
 		{
 			Title:       "Choose Session",
@@ -74,7 +82,8 @@ func DefaultCommands() []Command {
 			Category:    "Sessions",
 			Aliases:     []string{"cs"},
 			Icon:        "󱂬",
-			Tmux:        "choose-tree -s",
+			Action:      "tmux",
+			Command:     "choose-tree -s",
 		},
 		{
 			Title:       "New Session",
@@ -82,7 +91,8 @@ func DefaultCommands() []Command {
 			Category:    "Sessions",
 			Aliases:     []string{"ns"},
 			Icon:        "󰆧",
-			Tmux:        "command-prompt -p 'session name' 'new-session -d -s %1'",
+			Action:      "tmux",
+			Command:     "command-prompt -p 'session name' 'new-session -d -s %1'",
 		},
 		{
 			Title:       "Rename Session",
@@ -90,7 +100,8 @@ func DefaultCommands() []Command {
 			Category:    "Sessions",
 			Aliases:     []string{"rs"},
 			Icon:        "󰑕",
-			Tmux:        "command-prompt -I '#S' 'rename-session -- %1'",
+			Action:      "tmux",
+			Command:     "command-prompt -I '#S' 'rename-session -- %1'",
 		},
 		{
 			Title:       "Detach",
@@ -98,7 +109,8 @@ func DefaultCommands() []Command {
 			Category:    "Sessions",
 			Aliases:     []string{"d"},
 			Icon:        "󰍃",
-			Tmux:        "detach-client",
+			Action:      "tmux",
+			Command:     "detach-client",
 		},
 		{
 			Title:       "Reload Config",
@@ -106,7 +118,8 @@ func DefaultCommands() []Command {
 			Category:    "Tmux",
 			Aliases:     []string{"rc"},
 			Icon:        "󰑐",
-			Tmux:        "source-file ~/.tmux.conf \\; display-message 'tmux config reloaded'",
+			Action:      "tmux",
+			Command:     "source-file ~/.tmux.conf \\; display-message 'tmux config reloaded'",
 		},
 		ThemePreviewCommand(),
 		{
@@ -115,7 +128,8 @@ func DefaultCommands() []Command {
 			Category:    "Tools",
 			Aliases:     []string{"lg"},
 			Icon:        "󰊢",
-			Popup:       "lazygit",
+			Action:      "popup",
+			Command:     "lazygit",
 		},
 		{
 			Title:       "Btop",
@@ -123,7 +137,8 @@ func DefaultCommands() []Command {
 			Category:    "Tools",
 			Aliases:     []string{"bt"},
 			Icon:        "󰘚",
-			Popup:       "btop",
+			Action:      "popup",
+			Command:     "btop",
 		},
 	}
 }

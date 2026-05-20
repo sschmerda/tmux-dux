@@ -11,7 +11,7 @@ import (
 var testTheme = theme.Resolve("shades-of-purple")
 
 func TestBuildTmuxAction(t *testing.T) {
-	action, err := Build(config.Command{Tmux: "split-window -h"}, config.DefaultUI(), testTheme)
+	action, err := Build(config.Command{Action: "tmux", Command: "split-window -h"}, config.DefaultUI(), testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
@@ -27,7 +27,7 @@ func TestBuildTmuxAction(t *testing.T) {
 }
 
 func TestBuildShellAction(t *testing.T) {
-	action, err := Build(config.Command{Shell: "echo hi"}, config.DefaultUI(), testTheme)
+	action, err := Build(config.Command{Action: "shell", Command: "echo hi"}, config.DefaultUI(), testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestBuildShellAction(t *testing.T) {
 
 func TestBuildPopupAction(t *testing.T) {
 	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
-	action, err := Build(config.Command{Popup: "lazygit"}, ui, testTheme)
+	action, err := Build(config.Command{Action: "popup", Command: "lazygit"}, ui, testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestBuildPopupAction(t *testing.T) {
 
 func TestBuildPopupActionUsesCommandSizeOverride(t *testing.T) {
 	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
-	cmd := config.Command{Popup: "lazygit", PopupWidth: "95%", PopupHeight: "85%"}
+	cmd := config.Command{Action: "popup", Command: "lazygit", PopupWidth: "95%", PopupHeight: "85%"}
 	action, err := Build(cmd, ui, testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
@@ -66,7 +66,7 @@ func TestBuildPopupActionUsesCommandSizeOverride(t *testing.T) {
 
 func TestBuildPopupActionCanOverrideOnlyOneSize(t *testing.T) {
 	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
-	cmd := config.Command{Popup: "lazygit", PopupHeight: "85%"}
+	cmd := config.Command{Action: "popup", Command: "lazygit", PopupHeight: "85%"}
 	action, err := Build(cmd, ui, testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
@@ -78,7 +78,7 @@ func TestBuildPopupActionCanOverrideOnlyOneSize(t *testing.T) {
 }
 
 func TestBuildPopupActionQuotesShellCommand(t *testing.T) {
-	action, err := Build(config.Command{Popup: "echo 'hi'"}, config.DefaultUI(), testTheme)
+	action, err := Build(config.Command{Action: "popup", Command: "echo 'hi'"}, config.DefaultUI(), testTheme)
 	if err != nil {
 		t.Fatalf("Build returned error: %v", err)
 	}
@@ -89,6 +89,12 @@ func TestBuildPopupActionQuotesShellCommand(t *testing.T) {
 
 func TestBuildRejectsMissingAction(t *testing.T) {
 	if _, err := Build(config.Command{}, config.DefaultUI(), testTheme); err == nil {
+		t.Fatal("Build returned nil error")
+	}
+}
+
+func TestBuildRejectsUnsupportedAction(t *testing.T) {
+	if _, err := Build(config.Command{Action: "editor", Command: "vim"}, config.DefaultUI(), testTheme); err == nil {
 		t.Fatal("Build returned nil error")
 	}
 }

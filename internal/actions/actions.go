@@ -2,6 +2,7 @@ package actions
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -26,12 +27,18 @@ type Action struct {
 }
 
 func Build(cmd config.Command, ui config.UI, t theme.Theme) (Action, error) {
-	switch {
-	case cmd.Tmux != "":
-		return deferredTmuxAction(KindTmux, "tmux "+cmd.Tmux), nil
-	case cmd.Shell != "":
-		return Action{Kind: KindShell, Command: shellPath(), Args: []string{"-lc", cmd.Shell}}, nil
-	case cmd.Popup != "":
+	action := Kind(strings.ToLower(strings.TrimSpace(cmd.Action)))
+	command := strings.TrimSpace(cmd.Command)
+	if action == "" || command == "" {
+		return Action{}, errors.New("command must define action and command")
+	}
+
+	switch action {
+	case KindTmux:
+		return deferredTmuxAction(KindTmux, "tmux "+command), nil
+	case KindShell:
+		return Action{Kind: KindShell, Command: shellPath(), Args: []string{"-lc", command}}, nil
+	case KindPopup:
 		args := []string{"tmux", "display-popup", "-E", "-b", "rounded", "-d", "#{pane_current_path}"}
 		if style := tmux.PopupStyle(t); style != "" {
 			args = append(args, "-s", style)
@@ -45,10 +52,10 @@ func Build(cmd config.Command, ui config.UI, t theme.Theme) (Action, error) {
 		if height := popupHeight(cmd, ui); height != "" {
 			args = append(args, "-h", height)
 		}
-		args = append(args, cmd.Popup)
+		args = append(args, command)
 		return deferredTmuxAction(KindPopup, shellJoin(args...)), nil
 	default:
-		return Action{}, errors.New("command has no action")
+		return Action{}, fmt.Errorf("unsupported action %q", cmd.Action)
 	}
 }
 
