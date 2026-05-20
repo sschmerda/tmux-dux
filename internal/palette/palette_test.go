@@ -1,10 +1,12 @@
 package palette
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stefanschmerda/tmux-commander/internal/config"
 	"github.com/stefanschmerda/tmux-commander/internal/fuzzy"
+	"github.com/stefanschmerda/tmux-commander/internal/theme"
 )
 
 func TestNextCategoryIndexMovesToFirstCommandInNextCategory(t *testing.T) {
@@ -58,6 +60,24 @@ func TestPreviousCategoryIndexDoesNotMoveWhenOnlyOneCategoryIsVisible(t *testing
 
 	if got := previousCategoryIndex(matches, 1); got != 1 {
 		t.Fatalf("previousCategoryIndex = %d, want 1", got)
+	}
+}
+
+func TestRenderRowCanHideDescription(t *testing.T) {
+	styles := newStyles(theme.Resolve("shades-of-purple"))
+	match := fuzzy.Match{Command: config.Command{
+		Title:       "Lazygit",
+		Description: "Open lazygit in a popup",
+	}}
+
+	withDescription := renderRow(match, styles, false, true, true, 80)
+	if !strings.Contains(withDescription, "Open lazygit in a popup") {
+		t.Fatalf("row did not include description: %q", withDescription)
+	}
+
+	withoutDescription := renderRow(match, styles, false, true, false, 80)
+	if strings.Contains(withoutDescription, "Open lazygit in a popup") {
+		t.Fatalf("row included description: %q", withoutDescription)
 	}
 }
 

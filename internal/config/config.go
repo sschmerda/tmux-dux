@@ -12,13 +12,14 @@ import (
 )
 
 type UI struct {
-	Width       string `toml:"width"`
-	Height      string `toml:"height"`
-	PopupWidth  string `toml:"popup_width"`
-	PopupHeight string `toml:"popup_height"`
-	Border      bool   `toml:"border"`
-	Theme       string `toml:"theme"`
-	Glyphs      bool   `toml:"glyphs"`
+	Width           string `toml:"width"`
+	Height          string `toml:"height"`
+	PopupWidth      string `toml:"popup_width"`
+	PopupHeight     string `toml:"popup_height"`
+	Border          bool   `toml:"border"`
+	Theme           string `toml:"theme"`
+	Glyphs          bool   `toml:"glyphs"`
+	ShowDescription bool   `toml:"show_description"`
 }
 
 type Command struct {
@@ -42,13 +43,14 @@ type Config struct {
 
 func DefaultUI() UI {
 	return UI{
-		Width:       "40%",
-		Height:      "70%",
-		PopupWidth:  "80%",
-		PopupHeight: "80%",
-		Border:      true,
-		Theme:       "shades-of-purple",
-		Glyphs:      true,
+		Width:           "40%",
+		Height:          "70%",
+		PopupWidth:      "80%",
+		PopupHeight:     "80%",
+		Border:          true,
+		Theme:           "shades-of-purple",
+		Glyphs:          true,
+		ShowDescription: true,
 	}
 }
 

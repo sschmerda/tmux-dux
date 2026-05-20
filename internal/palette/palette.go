@@ -13,20 +13,21 @@ import (
 )
 
 type Model struct {
-	commands      []config.Command
-	activeTheme   theme.Theme
-	previewThemes []theme.Theme
-	previewIndex  int
-	showGlyphs    bool
-	styles        styles
-	mode          mode
-	query         string
-	caretVisible  bool
-	cursor        int
-	offset        int
-	selected      *config.Command
-	width         int
-	height        int
+	commands        []config.Command
+	activeTheme     theme.Theme
+	previewThemes   []theme.Theme
+	previewIndex    int
+	showGlyphs      bool
+	showDescription bool
+	styles          styles
+	mode            mode
+	query           string
+	caretVisible    bool
+	cursor          int
+	offset          int
+	selected        *config.Command
+	width           int
+	height          int
 }
 
 type Result struct {
@@ -93,20 +94,21 @@ func newStyles(t theme.Theme) styles {
 	}
 }
 
-func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool) Model {
+func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool) Model {
 	return Model{
-		commands:      commands,
-		activeTheme:   active,
-		previewThemes: previewThemes,
-		previewIndex:  previewIndex(previewThemes, active.Name),
-		showGlyphs:    showGlyphs,
-		caretVisible:  true,
-		styles:        newStyles(active),
+		commands:        commands,
+		activeTheme:     active,
+		previewThemes:   previewThemes,
+		previewIndex:    previewIndex(previewThemes, active.Name),
+		showGlyphs:      showGlyphs,
+		showDescription: showDescription,
+		caretVisible:    true,
+		styles:          newStyles(active),
 	}
 }
 
-func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool) (Result, error) {
-	program := tea.NewProgram(New(commands, active, previewThemes, showGlyphs), tea.WithAltScreen())
+func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool) (Result, error) {
+	program := tea.NewProgram(New(commands, active, previewThemes, showGlyphs, showDescription), tea.WithAltScreen())
 	finalModel, err := program.Run()
 	if err != nil {
 		return Result{}, err
@@ -254,7 +256,7 @@ func (m Model) View() string {
 
 		selected := rowIndex == m.cursor
 		contentWidth := m.innerWidth()
-		row := renderRow(match, s, selected, m.showGlyphs, contentWidth)
+		row := renderRow(match, s, selected, m.showGlyphs, m.showDescription, contentWidth)
 		rowLines := lipgloss.Height(row)
 		if linesUsed+rowLines > lineBudget {
 			break
@@ -289,14 +291,14 @@ func (m Model) viewThemePreview() string {
 		Description: "Split pane side by side",
 		Aliases:     []string{"sh"},
 		Icon:        "",
-	}, s, false, m.showGlyphs, m.innerWidth()))
+	}, s, false, m.showGlyphs, m.showDescription, m.innerWidth()))
 	b.WriteString("\n")
 	b.WriteString(renderCommandRow(config.Command{
 		Title:       "Lazygit",
 		Description: "Open lazygit in a popup",
 		Aliases:     []string{"lg"},
 		Icon:        "󰊢",
-	}, s, false, m.showGlyphs, m.innerWidth()))
+	}, s, false, m.showGlyphs, m.showDescription, m.innerWidth()))
 	b.WriteString("\n\n")
 	b.WriteString(s.selected.Width(m.innerWidth()).Render("  Selected row preview"))
 	b.WriteString("\n\n")
@@ -560,18 +562,18 @@ func commandRowLines(config.Command) int {
 	return 1
 }
 
-func renderCommandRow(cmd config.Command, s styles, selected bool, showGlyphs bool, width int) string {
-	return renderRow(fuzzy.Match{Command: cmd}, s, selected, showGlyphs, width)
+func renderCommandRow(cmd config.Command, s styles, selected bool, showGlyphs bool, showDescription bool, width int) string {
+	return renderRow(fuzzy.Match{Command: cmd}, s, selected, showGlyphs, showDescription, width)
 }
 
-func renderRow(match fuzzy.Match, s styles, selected bool, showGlyphs bool, width int) string {
+func renderRow(match fuzzy.Match, s styles, selected bool, showGlyphs bool, showDescription bool, width int) string {
 	cmd := match.Command
 	descStyle := s.desc
 	if selected {
 		descStyle = s.selectedDesc
 	}
 	line := renderRowPrefix(match, s, selected, showGlyphs)
-	if cmd.Description != "" {
+	if showDescription && cmd.Description != "" {
 		separator := " - "
 		budget := width - lipgloss.Width(line) - lipgloss.Width(separator)
 		if budget > 0 {

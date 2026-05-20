@@ -56,6 +56,7 @@ popup_height = "80%"
 border = true
 theme = "shades-of-purple"
 glyphs = true
+show_description = true
 
 [[commands]]
 title = "Lazygit"
@@ -103,6 +104,7 @@ The commander popup is launched without a native tmux border and draws its own t
 | `border` | `true` | Retained for popup action behavior and future launcher options. The commander currently draws its own border. |
 | `theme` | `"shades-of-purple"` | Built-in theme name, or `"custom"` to use `[custom_theme]`. |
 | `glyphs` | `true` | Enables command glyphs from `[[commands]].icon`. |
+| `show_description` | `true` | Shows command descriptions next to command titles. Set to `false` for a denser command list. |
 
 `[[commands]]` fields:
 

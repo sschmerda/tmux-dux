@@ -20,6 +20,9 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if cfg.UI.Theme != "shades-of-purple" {
 		t.Fatalf("theme = %q, want shades-of-purple", cfg.UI.Theme)
 	}
+	if !cfg.UI.ShowDescription {
+		t.Fatal("show_description = false, want true")
+	}
 }
 
 func TestLoadFileParsesTOMLCommands(t *testing.T) {
@@ -29,6 +32,7 @@ func TestLoadFileParsesTOMLCommands(t *testing.T) {
 width = "60%"
 theme = "custom"
 glyphs = false
+show_description = false
 
 [custom_theme]
 background = "#111111"
@@ -77,6 +81,9 @@ popup_height = "85%"
 	}
 	if cfg.UI.Glyphs {
 		t.Fatal("glyphs = true, want false")
+	}
+	if cfg.UI.ShowDescription {
+		t.Fatal("show_description = true, want false")
 	}
 	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.CommanderBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
