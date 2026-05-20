@@ -3,6 +3,7 @@ package palette
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -20,6 +21,7 @@ type Model struct {
 	styles        styles
 	mode          mode
 	query         string
+	caretVisible  bool
 	cursor        int
 	offset        int
 	selected      *config.Command
@@ -40,6 +42,10 @@ const (
 )
 
 const horizontalPadding = 3
+
+const cursorBlinkInterval = 500 * time.Millisecond
+
+type cursorBlinkMsg struct{}
 
 type styles struct {
 	root          lipgloss.Style
@@ -88,6 +94,7 @@ func New(commands []config.Command, active theme.Theme, previewThemes []theme.Th
 		previewThemes: previewThemes,
 		previewIndex:  previewIndex(previewThemes, active.Name),
 		showGlyphs:    showGlyphs,
+		caretVisible:  true,
 		styles:        newStyles(active),
 	}
 }
@@ -106,11 +113,14 @@ func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Th
 }
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	return blinkCursor()
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case cursorBlinkMsg:
+		m.caretVisible = !m.caretVisible
+		return m, blinkCursor()
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -158,16 +168,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.query = m.query[:len(m.query)-1]
 				m.cursor = 0
 				m.offset = 0
+				m.caretVisible = true
 			}
 		default:
 			if len(msg.Runes) > 0 {
 				m.query += string(msg.Runes)
 				m.cursor = 0
 				m.offset = 0
+				m.caretVisible = true
 			}
 		}
 	}
 	return m, nil
+}
+
+func blinkCursor() tea.Cmd {
+	return tea.Tick(cursorBlinkInterval, func(time.Time) tea.Msg {
+		return cursorBlinkMsg{}
+	})
 }
 
 func (m Model) updateThemePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -197,13 +215,7 @@ func (m Model) View() string {
 		return m.viewThemePreview()
 	}
 	var b strings.Builder
-	b.WriteString(s.title.Render("tmux-commander"))
-	b.WriteString("\n")
-	b.WriteString(s.prompt.Render("Search: "))
-	b.WriteString(s.query.Render(m.query))
-	if m.query == "" {
-		b.WriteString(s.muted.Render(" Type to filter"))
-	}
+	b.WriteString(m.renderSearchBox())
 	b.WriteString("\n\n")
 
 	if len(matches) == 0 {
@@ -428,7 +440,7 @@ func (m *Model) ensureCursorVisible() {
 	if m.cursor < m.offset {
 		m.offset = m.cursor
 	}
-	for !m.cursorVisible(matches) && m.offset < m.cursor {
+	for !m.commandCursorVisible(matches) && m.offset < m.cursor {
 		m.offset++
 	}
 	if m.offset < 0 {
@@ -437,11 +449,46 @@ func (m *Model) ensureCursorVisible() {
 }
 
 func (m Model) commandLineBudget() int {
-	rows := m.contentHeight() - 5
+	rows := m.contentHeight() - 6
 	if rows < 1 {
 		return 1
 	}
 	return rows
+}
+
+func (m Model) renderSearchBox() string {
+	width := m.innerWidth()
+	fill := m.activeTheme.SelectedBG
+	contentWidth := width - 4
+	if contentWidth < 1 {
+		contentWidth = 1
+	}
+
+	value := m.query
+	valueStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.SelectedFG)).Background(lipgloss.Color(fill))
+
+	cursor := " "
+	if m.caretVisible {
+		cursor = "█"
+	}
+
+	promptStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.Glyph)).Background(lipgloss.Color(fill))
+	prompt := "❯ "
+	prefix := promptStyle.Render(prompt)
+	inputBudget := contentWidth - lipgloss.Width(prompt) - lipgloss.Width(cursor)
+	if inputBudget < 1 {
+		inputBudget = 1
+	}
+	content := prefix + valueStyle.Render(truncate(value, inputBudget)) + promptStyle.Render(cursor)
+
+	return lipgloss.NewStyle().
+		Width(width-2).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(m.activeTheme.Header)).
+		BorderBackground(lipgloss.Color(m.activeTheme.Background)).
+		Background(lipgloss.Color(fill)).
+		Padding(0, 1).
+		Render(content)
 }
 
 func (m Model) innerWidth() int {
@@ -474,7 +521,7 @@ func (m Model) renderFrame(content string) string {
 	return s.frame.Width(m.contentWidth()).Height(m.contentHeight()).Render(inner)
 }
 
-func (m Model) cursorVisible(matches []fuzzy.Match) bool {
+func (m Model) commandCursorVisible(matches []fuzzy.Match) bool {
 	if m.cursor < m.offset {
 		return false
 	}
