@@ -32,7 +32,7 @@ func Build(cmd config.Command, ui config.UI, t theme.Theme) (Action, error) {
 	case cmd.Shell != "":
 		return Action{Kind: KindShell, Command: shellPath(), Args: []string{"-lc", cmd.Shell}}, nil
 	case cmd.Popup != "":
-		args := []string{"tmux", "display-popup", "-E", "-d", "#{pane_current_path}"}
+		args := []string{"tmux", "display-popup", "-E", "-b", "rounded", "-d", "#{pane_current_path}"}
 		if style := tmux.PopupStyle(t); style != "" {
 			args = append(args, "-s", style)
 		}

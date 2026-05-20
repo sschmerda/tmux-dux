@@ -72,7 +72,7 @@ type styles struct {
 func newStyles(t theme.Theme) styles {
 	return styles{
 		root:          lipgloss.NewStyle().Background(lipgloss.Color(t.Background)),
-		frame:         lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderForeground(lipgloss.Color(t.Header)).BorderBackground(lipgloss.Color(t.Background)).Background(lipgloss.Color(t.Background)),
+		frame:         lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(t.Header)).BorderBackground(lipgloss.Color(t.Background)).Background(lipgloss.Color(t.Background)),
 		title:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Title)).Background(lipgloss.Color(t.Background)),
 		header:        lipgloss.NewStyle().Foreground(lipgloss.Color(t.Header)).Background(lipgloss.Color(t.Background)).Bold(true),
 		desc:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Description)).Background(lipgloss.Color(t.Background)),
