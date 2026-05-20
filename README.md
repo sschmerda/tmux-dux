@@ -89,6 +89,33 @@ tmux = "split-window -h -c '#{pane_current_path}'"
 
 The commander popup is launched without a native tmux border and draws its own themed border. The `border` setting is retained for popup actions and future launcher options.
 
+`[ui]` fields:
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `width` | `"40%"` | Commander popup width when launched with `tmux-commander popup`. |
+| `height` | `"70%"` | Commander popup height when launched with `tmux-commander popup`. |
+| `popup_width` | `"80%"` | Default width for spawned `popup` command actions. |
+| `popup_height` | `"80%"` | Default height for spawned `popup` command actions. |
+| `border` | `true` | Retained for popup action behavior and future launcher options. The commander currently draws its own border. |
+| `theme` | `"shades-of-purple"` | Built-in theme name, or `"custom"` to use `[custom_theme]`. |
+| `glyphs` | `true` | Enables command glyphs from `[[commands]].icon`. |
+
+`[[commands]]` fields:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `title` | Yes | Command name shown in the palette and used for fuzzy matching. |
+| `description` | No | Secondary text shown next to the command title. |
+| `category` | No | Group header used when the query is empty, and a weak fuzzy-match field while filtering. |
+| `aliases` | No | Short searchable abbreviations rendered as chips. |
+| `icon` | No | Glyph shown to the left of the command title when `[ui].glyphs` is true. |
+| `tmux` | One action required | Runs `tmux <value>` after the palette exits. |
+| `shell` | One action required | Runs the value through the user's shell after the palette exits. |
+| `popup` | One action required | Opens a spawned tmux popup running the value. |
+| `popup_width` | No | Per-command width override for `popup` actions. |
+| `popup_height` | No | Per-command height override for `popup` actions. |
+
 Select a built-in theme by setting `[ui].theme` to one of these exact names:
 
 - `catppuccin`
@@ -196,7 +223,7 @@ popup_width = "95%"
 popup_height = "90%"
 ```
 
-Popup actions inherit the active theme's tmux popup style. `background` / `query` are used for the popup body, and `header` is used for the popup border foreground. Full-screen terminal apps may still draw their own colors.
+Popup actions inherit the active theme's tmux popup style. `background` / `query` are used for the popup body, and `commander_border` is used for the popup border foreground. Full-screen terminal apps may still draw their own colors.
 
 Popup actions start in the active tmux pane directory via `#{pane_current_path}`.
 
