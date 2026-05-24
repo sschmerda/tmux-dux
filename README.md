@@ -50,7 +50,7 @@ If no config file exists, built-in defaults are used.
 ```toml
 [ui]
 width = "40%"
-height = "70%"
+height = "80%"
 popup_width = "80%"
 popup_height = "80%"
 border = true
@@ -100,7 +100,7 @@ The commander popup is launched without a native tmux border and draws its own t
 | Field | Default | Description |
 | --- | --- | --- |
 | `width` | `"40%"` | Commander popup width when launched with `tmux-commander popup`. |
-| `height` | `"70%"` | Commander popup height when launched with `tmux-commander popup`. |
+| `height` | `"80%"` | Commander popup height when launched with `tmux-commander popup`. |
 | `popup_width` | `"80%"` | Default width for spawned `popup` command actions. |
 | `popup_height` | `"80%"` | Default height for spawned `popup` command actions. |
 | `border` | `true` | Retained for popup action behavior and future launcher options. The commander currently draws its own border. |

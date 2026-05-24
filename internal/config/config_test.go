@@ -78,8 +78,8 @@ popup_height = "85%"
 	if cfg.UI.Width != "60%" {
 		t.Fatalf("width = %q, want 60%%", cfg.UI.Width)
 	}
-	if cfg.UI.Height != "70%" {
-		t.Fatalf("height = %q, want default 70%%", cfg.UI.Height)
+	if cfg.UI.Height != "80%" {
+		t.Fatalf("height = %q, want default 80%%", cfg.UI.Height)
 	}
 	if cfg.UI.Theme != "custom" {
 		t.Fatalf("theme = %q, want custom", cfg.UI.Theme)
