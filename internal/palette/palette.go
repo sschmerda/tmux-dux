@@ -2,6 +2,7 @@ package palette
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ type Model struct {
 	previewIndex    int
 	showGlyphs      bool
 	showDescription bool
+	recentKeys      []string
 	styles          styles
 	mode            mode
 	query           string
@@ -45,6 +47,10 @@ const (
 const horizontalPadding = 3
 
 const cursorBlinkInterval = 500 * time.Millisecond
+
+const recentCategory = "Recent"
+
+const recentScoreBoost = 50
 
 type cursorBlinkMsg struct{}
 
@@ -94,7 +100,7 @@ func newStyles(t theme.Theme) styles {
 	}
 }
 
-func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool) Model {
+func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string) Model {
 	return Model{
 		commands:        commands,
 		activeTheme:     active,
@@ -102,13 +108,14 @@ func New(commands []config.Command, active theme.Theme, previewThemes []theme.Th
 		previewIndex:    previewIndex(previewThemes, active.Name),
 		showGlyphs:      showGlyphs,
 		showDescription: showDescription,
+		recentKeys:      append([]string{}, recentKeys...),
 		caretVisible:    true,
 		styles:          newStyles(active),
 	}
 }
 
-func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool) (Result, error) {
-	program := tea.NewProgram(New(commands, active, previewThemes, showGlyphs, showDescription), tea.WithAltScreen())
+func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string) (Result, error) {
+	program := tea.NewProgram(New(commands, active, previewThemes, showGlyphs, showDescription, recentKeys), tea.WithAltScreen())
 	finalModel, err := program.Run()
 	if err != nil {
 		return Result{}, err
@@ -141,7 +148,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
 		case "enter":
-			matches := fuzzy.Filter(m.commands, m.query)
+			matches := m.matches()
 			if len(matches) > 0 {
 				cmd := matches[m.cursor].Command
 				if cmd.Internal == config.InternalThemePreview {
@@ -161,7 +168,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.ensureCursorVisible()
 		case "down", "ctrl+n":
-			if m.cursor < len(fuzzy.Filter(m.commands, m.query))-1 {
+			if m.cursor < len(m.matches())-1 {
 				m.cursor++
 			}
 			m.ensureCursorVisible()
@@ -217,7 +224,7 @@ func (m Model) View() string {
 		return ""
 	}
 
-	matches := fuzzy.Filter(m.commands, m.query)
+	matches := m.matches()
 	s := m.styles
 	if m.mode == modeThemePreview {
 		return m.viewThemePreview()
@@ -245,6 +252,14 @@ func (m Model) View() string {
 		match := matches[rowIndex]
 		cmd := match.Command
 		if showHeaders && cmd.Category != lastCategory {
+			if lastCategory == recentCategory {
+				if linesUsed+1 > lineBudget {
+					break
+				}
+				b.WriteString(m.renderRecentDivider())
+				b.WriteString("\n")
+				linesUsed++
+			}
 			if linesUsed+1 > lineBudget {
 				break
 			}
@@ -371,13 +386,69 @@ func previewIndex(themes []theme.Theme, name string) int {
 	return 0
 }
 
-func (m *Model) moveToNextCategory() {
+func (m Model) matches() []fuzzy.Match {
+	if strings.TrimSpace(m.query) == "" {
+		return fuzzy.Filter(m.commandsForEmptyQuery(), "")
+	}
 	matches := fuzzy.Filter(m.commands, m.query)
+	for i := range matches {
+		matches[i].Score += m.recentBoost(config.CommandKey(matches[i].Command))
+	}
+	sort.SliceStable(matches, func(i, j int) bool {
+		if matches[i].Score == matches[j].Score {
+			return matches[i].Command.Title < matches[j].Command.Title
+		}
+		return matches[i].Score > matches[j].Score
+	})
+	return matches
+}
+
+func (m Model) commandsForEmptyQuery() []config.Command {
+	if len(m.recentKeys) == 0 {
+		return m.commands
+	}
+	byKey := map[string]config.Command{}
+	for _, cmd := range m.commands {
+		if cmd.Internal != "" {
+			continue
+		}
+		byKey[config.CommandKey(cmd)] = cmd
+	}
+	commands := make([]config.Command, 0, len(m.commands))
+	for _, key := range m.recentKeys {
+		cmd, ok := byKey[key]
+		if !ok {
+			continue
+		}
+		cmd.Category = recentCategory
+		commands = append(commands, cmd)
+	}
+	for _, cmd := range m.commands {
+		commands = append(commands, cmd)
+	}
+	return commands
+}
+
+func (m Model) recentBoost(key string) int {
+	for i, recentKey := range m.recentKeys {
+		if recentKey == key {
+			boost := recentScoreBoost - i
+			if boost < 1 {
+				return 1
+			}
+			return boost
+		}
+	}
+	return 0
+}
+
+func (m *Model) moveToNextCategory() {
+	matches := m.matches()
 	m.cursor = nextCategoryIndex(matches, m.cursor)
 }
 
 func (m *Model) moveToPreviousCategory() {
-	matches := fuzzy.Filter(m.commands, m.query)
+	matches := m.matches()
 	m.cursor = previousCategoryIndex(matches, m.cursor)
 }
 
@@ -433,7 +504,7 @@ func clampCursor(cursor int, length int) int {
 }
 
 func (m *Model) ensureCursorVisible() {
-	matches := fuzzy.Filter(m.commands, m.query)
+	matches := m.matches()
 	if len(matches) == 0 {
 		m.cursor = 0
 		m.offset = 0
@@ -529,6 +600,14 @@ func (m Model) renderFrame(content string) string {
 	return s.frame.Width(m.contentWidth()).Height(m.contentHeight()).Render(inner)
 }
 
+func (m Model) renderRecentDivider() string {
+	width := m.innerWidth()
+	if width < 1 {
+		width = 1
+	}
+	return m.styles.muted.Render(strings.Repeat("─", width))
+}
+
 func (m Model) commandCursorVisible(matches []fuzzy.Match) bool {
 	if m.cursor < m.offset {
 		return false
@@ -540,6 +619,12 @@ func (m Model) commandCursorVisible(matches []fuzzy.Match) bool {
 	for rowIndex := m.offset; rowIndex < len(matches); rowIndex++ {
 		cmd := matches[rowIndex].Command
 		if showHeaders && cmd.Category != lastCategory {
+			if lastCategory == recentCategory {
+				if linesUsed+1 > lineBudget {
+					return false
+				}
+				linesUsed++
+			}
 			if linesUsed+1 > lineBudget {
 				return false
 			}

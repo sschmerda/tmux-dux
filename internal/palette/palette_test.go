@@ -81,6 +81,55 @@ func TestRenderRowCanHideDescription(t *testing.T) {
 	}
 }
 
+func TestMatchesShowsRecentGroupAndKeepsNormalCategoryEntry(t *testing.T) {
+	recent := config.Command{Title: "Lazygit", Category: "Tools", Action: "popup", Command: "lazygit"}
+	other := config.Command{Title: "Split Horizontal", Category: "Panes", Action: "tmux", Command: "split-window -h"}
+	model := New(
+		[]config.Command{other, recent},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		[]string{config.CommandKey(recent)},
+	)
+
+	matches := model.matches()
+	if len(matches) != 3 {
+		t.Fatalf("match count = %d, want 3", len(matches))
+	}
+	if matches[0].Command.Title != "Lazygit" || matches[0].Command.Category != recentCategory {
+		t.Fatalf("first match = %#v", matches[0].Command)
+	}
+	if matches[1].Command.Title != "Split Horizontal" {
+		t.Fatalf("second match = %#v", matches[1].Command)
+	}
+	if matches[2].Command.Title != "Lazygit" || matches[2].Command.Category != "Tools" {
+		t.Fatalf("third match = %#v", matches[2].Command)
+	}
+}
+
+func TestMatchesAppliesRecentBoostWhenFiltering(t *testing.T) {
+	recent := config.Command{Title: "Git Status", Category: "Tools", Action: "tmux", Command: "git-status"}
+	other := config.Command{Title: "Git Stash", Category: "Tools", Action: "tmux", Command: "git-stash"}
+	model := New(
+		[]config.Command{other, recent},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		[]string{config.CommandKey(recent)},
+	)
+	model.query = "git st"
+
+	matches := model.matches()
+	if len(matches) != 2 {
+		t.Fatalf("match count = %d, want 2", len(matches))
+	}
+	if matches[0].Command.Title != "Git Status" {
+		t.Fatalf("first match = %#v", matches[0].Command)
+	}
+}
+
 func categoryMatches(categories ...string) []fuzzy.Match {
 	matches := make([]fuzzy.Match, 0, len(categories))
 	for _, category := range categories {

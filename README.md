@@ -57,6 +57,8 @@ border = true
 theme = "shades-of-purple"
 glyphs = true
 show_description = true
+recent_commands = true
+recent_limit = 10
 
 [[commands]]
 title = "Lazygit"
@@ -105,6 +107,8 @@ The commander popup is launched without a native tmux border and draws its own t
 | `theme` | `"shades-of-purple"` | Built-in theme name, or `"custom"` to use `[custom_theme]`. |
 | `glyphs` | `true` | Enables command glyphs from `[[commands]].icon`. |
 | `show_description` | `true` | Shows command descriptions next to command titles. Set to `false` for a denser command list. |
+| `recent_commands` | `true` | Enables the recent-command section and recency boost while filtering. |
+| `recent_limit` | `10` | Maximum number of recent commands to keep in state and show in the palette. Set to `0` to disable recents. |
 
 `[[commands]]` fields:
 
@@ -203,6 +207,33 @@ tmux-commander themes
 
 The built-in `Preview Themes` palette command opens an in-app preview in the current popup. Use `Up` / `Down` or `Left` / `Right` to cycle themes, then `Enter` or `Esc` to return to the command list. The selected preview theme stays active until this `tmux-commander` popup exits, including for popup actions launched from that session. The preview does not write config; it shows the `theme = "..."` value to set permanently.
 
+## Recent Commands
+
+When `[ui].recent_commands` is enabled, selecting a command writes a bounded history file:
+
+1. `$XDG_STATE_HOME/tmux-commander/history.toml`
+2. `~/.local/state/tmux-commander/history.toml`
+
+The file is created lazily after the first command selection. It is capped to `[ui].recent_limit`, so it cannot grow beyond the configured number of entries.
+
+Example state file:
+
+```toml
+version = 1
+
+[[commands]]
+key = "popup:lazygit"
+title = "Lazygit"
+action = "popup"
+command = "lazygit"
+last_used = 2026-05-21T10:15:00Z
+use_count = 3
+```
+
+Commands are identified by `action:command`, not by title. Reusing an existing command updates its `last_used` timestamp, increments `use_count`, and moves it to the top without creating a duplicate. A new command is added at the top and the oldest entry is trimmed only when the list would exceed `recent_limit`.
+
+With an empty search query, recent commands are shown first under a `Recent` heading, followed by a subtle divider and the normal categorized command list. Recent commands still appear again in their normal category. While filtering, all commands are searched normally, but recent commands receive a small score boost.
+
 ## Actions
 
 Each command must define an `action` and a `command`.
@@ -246,7 +277,7 @@ Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI ex
 
 In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list.
 
-When the query is empty, commands are grouped by category. While filtering, category headers are hidden and results are sorted by fuzzy score. Multi-token searches such as `split pane` are supported.
+When the query is empty, commands are grouped by recent use and category. While filtering, category headers are hidden and results are sorted by fuzzy score with a small recency boost. Multi-token searches such as `split pane` are supported.
 
 ## Default Commands
 

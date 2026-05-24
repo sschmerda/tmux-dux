@@ -20,6 +20,8 @@ type UI struct {
 	Theme           string `toml:"theme"`
 	Glyphs          bool   `toml:"glyphs"`
 	ShowDescription bool   `toml:"show_description"`
+	RecentCommands  bool   `toml:"recent_commands"`
+	RecentLimit     int    `toml:"recent_limit"`
 }
 
 type Command struct {
@@ -51,6 +53,8 @@ func DefaultUI() UI {
 		Theme:           "shades-of-purple",
 		Glyphs:          true,
 		ShowDescription: true,
+		RecentCommands:  true,
+		RecentLimit:     10,
 	}
 }
 
@@ -112,6 +116,9 @@ func LoadFile(path string) (Config, error) {
 	if cfg.UI.Theme == "" {
 		cfg.UI.Theme = DefaultUI().Theme
 	}
+	if cfg.UI.RecentLimit < 0 {
+		return Config{}, errors.New("ui.recent_limit must be >= 0")
+	}
 	if len(cfg.Commands) == 0 {
 		cfg.Commands = DefaultCommands()
 	}
@@ -120,6 +127,10 @@ func LoadFile(path string) (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+func CommandKey(cmd Command) string {
+	return strings.ToLower(strings.TrimSpace(cmd.Action)) + ":" + strings.TrimSpace(cmd.Command)
 }
 
 func rejectDeprecatedActionFields(meta toml.MetaData) error {

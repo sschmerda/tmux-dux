@@ -23,6 +23,9 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if !cfg.UI.ShowDescription {
 		t.Fatal("show_description = false, want true")
 	}
+	if !cfg.UI.RecentCommands || cfg.UI.RecentLimit != 10 {
+		t.Fatalf("recent defaults = %v %d, want true 10", cfg.UI.RecentCommands, cfg.UI.RecentLimit)
+	}
 }
 
 func TestLoadFileParsesTOMLCommands(t *testing.T) {
@@ -33,6 +36,8 @@ width = "60%"
 theme = "custom"
 glyphs = false
 show_description = false
+recent_commands = false
+recent_limit = 5
 
 [custom_theme]
 background = "#111111"
@@ -85,6 +90,12 @@ popup_height = "85%"
 	if cfg.UI.ShowDescription {
 		t.Fatal("show_description = true, want false")
 	}
+	if cfg.UI.RecentCommands {
+		t.Fatal("recent_commands = true, want false")
+	}
+	if cfg.UI.RecentLimit != 5 {
+		t.Fatalf("recent_limit = %d, want 5", cfg.UI.RecentLimit)
+	}
 	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.CommanderBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
 	}
@@ -135,6 +146,25 @@ func TestLoadFileRejectsCommandWithoutActionCommandPair(t *testing.T) {
 [[commands]]
 title = "Broken"
 action = "popup"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := LoadFile(path); err == nil {
+		t.Fatal("LoadFile returned nil error")
+	}
+}
+
+func TestLoadFileRejectsNegativeRecentLimit(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[ui]
+recent_limit = -1
+
+[[commands]]
+title = "Pane"
+action = "tmux"
+command = "display-panes"
 `
 	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
 		t.Fatalf("write config: %v", err)
