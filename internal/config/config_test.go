@@ -11,8 +11,8 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFile returned error: %v", err)
 	}
-	if got := len(cfg.Commands); got != 16 {
-		t.Fatalf("default command count = %d, want 16", got)
+	if got := len(cfg.Commands); got != 19 {
+		t.Fatalf("default command count = %d, want 19", got)
 	}
 	if cfg.UI.Width != "40%" || cfg.UI.PopupWidth != "80%" {
 		t.Fatalf("unexpected default UI: %#v", cfg.UI)
@@ -99,17 +99,26 @@ popup_height = "85%"
 	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.CommanderBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
 	}
-	if len(cfg.Commands) != 2 {
-		t.Fatalf("command count = %d, want 2", len(cfg.Commands))
-	}
 	if cfg.Commands[0].Action != "popup" || cfg.Commands[0].Command != "tail -f app.log" {
 		t.Fatalf("action command = %q %q", cfg.Commands[0].Action, cfg.Commands[0].Command)
 	}
 	if cfg.Commands[0].PopupWidth != "95%" || cfg.Commands[0].PopupHeight != "85%" {
 		t.Fatalf("popup size = %q x %q", cfg.Commands[0].PopupWidth, cfg.Commands[0].PopupHeight)
 	}
-	if cfg.Commands[1].Internal != InternalThemePreview {
-		t.Fatalf("internal command = %q, want %q", cfg.Commands[1].Internal, InternalThemePreview)
+	if len(cfg.Commands) != 6 {
+		t.Fatalf("command count = %d, want 6", len(cfg.Commands))
+	}
+	for _, internal := range []string{InternalThemePreview, InternalClearRecent, InternalConfigPath, InternalEditConfig, InternalReloadConfig} {
+		found := false
+		for _, cmd := range cfg.Commands {
+			if cmd.Internal == internal {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("missing internal command %q", internal)
+		}
 	}
 }
 
@@ -177,22 +186,25 @@ command = "display-panes"
 func TestDefaultCommandsContainExpectedInitialSet(t *testing.T) {
 	commands := DefaultCommands()
 	want := map[string]bool{
-		"Find Pane":        false,
-		"Split Horizontal": false,
-		"Split Vertical":   false,
-		"Close Pane":       false,
-		"Zoom / Unzoom":    false,
-		"New Window":       false,
-		"Rename Window":    false,
-		"Close Window":     false,
-		"Choose Session":   false,
-		"New Session":      false,
-		"Rename Session":   false,
-		"Detach":           false,
-		"Reload Config":    false,
-		"Preview Themes":   false,
-		"Lazygit":          false,
-		"Btop":             false,
+		"Find Pane":             false,
+		"Split Horizontal":      false,
+		"Split Vertical":        false,
+		"Close Pane":            false,
+		"Zoom / Unzoom":         false,
+		"New Window":            false,
+		"Rename Window":         false,
+		"Close Window":          false,
+		"Choose Session":        false,
+		"New Session":           false,
+		"Rename Session":        false,
+		"Detach":                false,
+		"Preview Themes":        false,
+		"Clear Recent Commands": false,
+		"List Config Path":      false,
+		"Open / Edit Config":    false,
+		"Reload Config":         false,
+		"Lazygit":               false,
+		"Btop":                  false,
 	}
 	for _, cmd := range commands {
 		if _, ok := want[cmd.Title]; ok {

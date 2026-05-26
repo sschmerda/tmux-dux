@@ -2,6 +2,7 @@ package tmux
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/stefanschmerda/tmux-commander/internal/theme"
@@ -38,6 +39,13 @@ func PopupArgs(binary string, width string, height string, border bool, t theme.
 
 func OpenPopup(binary string, width string, height string, border bool, t theme.Theme) error {
 	cmd := exec.Command("tmux", PopupArgs(binary, width, height, border, t)...)
+	return cmd.Run()
+}
+
+func DisplayMessage(message string) error {
+	cmd := exec.Command("tmux", "display-message", message)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 

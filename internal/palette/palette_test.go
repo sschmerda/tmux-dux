@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stefanschmerda/tmux-commander/internal/config"
 	"github.com/stefanschmerda/tmux-commander/internal/fuzzy"
 	"github.com/stefanschmerda/tmux-commander/internal/theme"
@@ -91,6 +92,8 @@ func TestMatchesShowsRecentGroupAndKeepsNormalCategoryEntry(t *testing.T) {
 		true,
 		true,
 		[]string{config.CommandKey(recent)},
+		"",
+		"",
 	)
 
 	matches := model.matches()
@@ -118,6 +121,8 @@ func TestMatchesAppliesRecentBoostWhenFiltering(t *testing.T) {
 		true,
 		true,
 		[]string{config.CommandKey(recent)},
+		"",
+		"",
 	)
 	model.query = "git st"
 
@@ -127,6 +132,116 @@ func TestMatchesAppliesRecentBoostWhenFiltering(t *testing.T) {
 	}
 	if matches[0].Command.Title != "Git Status" {
 		t.Fatalf("first match = %#v", matches[0].Command)
+	}
+}
+
+func TestConfigPathMessageShowsPath(t *testing.T) {
+	model := New(
+		nil,
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		nil,
+		"/tmp/tmux-commander/config.toml",
+		"",
+	)
+	model.width = 80
+	model.height = 24
+	model.openMessage(config.InternalConfigPath)
+
+	view := model.viewMessage()
+	if !strings.Contains(view, "/tmp/tmux-commander/config.toml") {
+		t.Fatalf("view did not include config path: %q", view)
+	}
+}
+
+func TestMessageLineHighlightsPaths(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 80
+	model.height = 24
+
+	path := model.renderMessageLine("/tmp/tmux-commander/config.toml")
+	plain := model.renderMessageLine("Recent command history cleared:")
+	if path == plain {
+		t.Fatal("path and plain message rendered identically")
+	}
+}
+
+func TestOpenMessagePreservesCursorAndQuery(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "/tmp/config.toml", "/tmp/history.toml")
+	model.cursor = 3
+	model.offset = 2
+	model.query = "config"
+
+	model.openMessage(config.InternalConfigPath)
+	if model.cursor != 3 || model.offset != 2 || model.query != "config" {
+		t.Fatalf("state = cursor %d offset %d query %q", model.cursor, model.offset, model.query)
+	}
+}
+
+func TestOpenThemePreviewPreservesCursorAndQuery(t *testing.T) {
+	model := New(
+		[]config.Command{{Title: "Preview Themes", Internal: config.InternalThemePreview}},
+		theme.Resolve("shades-of-purple"),
+		[]theme.Theme{theme.Resolve("shades-of-purple")},
+		true,
+		true,
+		nil,
+		"",
+		"",
+	)
+	model.cursor = 0
+	model.offset = 2
+	model.query = "themes"
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.cursor != 0 || updated.offset != 2 || updated.query != "themes" {
+		t.Fatalf("state = cursor %d offset %d query %q", updated.cursor, updated.offset, updated.query)
+	}
+
+	next, _ = updated.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	updated = next.(Model)
+	if updated.mode != modeCommands {
+		t.Fatalf("mode = %v, want commands", updated.mode)
+	}
+	if updated.cursor != 0 || updated.offset != 2 || updated.query != "themes" {
+		t.Fatalf("state after return = cursor %d offset %d query %q", updated.cursor, updated.offset, updated.query)
+	}
+}
+
+func TestApplyStatePreservesReloadPosition(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.applyState(State{Query: "reload", Cursor: 4, Offset: 3})
+
+	if got := model.state(); got.Query != "reload" || got.Cursor != 4 || got.Offset != 3 {
+		t.Fatalf("state = %#v", got)
+	}
+}
+
+func TestPopupInternalCommandExitsPalette(t *testing.T) {
+	model := New(
+		[]config.Command{{Title: "Open Config", Internal: config.InternalEditConfig}},
+		theme.Resolve("shades-of-purple"),
+		[]theme.Theme{theme.Resolve("shades-of-purple")},
+		true,
+		true,
+		nil,
+		"",
+		"",
+	)
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.selected == nil {
+		t.Fatal("expected popup-style internal command to be selected")
+	}
+	if updated.selected.Internal != config.InternalEditConfig {
+		t.Fatalf("selected internal = %q, want %q", updated.selected.Internal, config.InternalEditConfig)
+	}
+	if cmd == nil {
+		t.Fatal("expected popup-style internal command to quit the palette")
 	}
 }
 

@@ -238,6 +238,8 @@ With an empty search query, recent commands are shown first under a `Recent` hea
 
 Each command must define an `action` and a `command`.
 
+User-defined actions are terminal handoffs. Selecting a `tmux`, `shell`, or `popup` command exits the commander first, then dispatches the command. This keeps tmux prompts and interactive terminal programs from competing with the Bubble Tea input loop.
+
 `action = "tmux"` runs `tmux <command>` after the palette exits:
 
 ```toml
@@ -267,6 +269,8 @@ Popup actions start in the active tmux pane directory via `#{pane_current_path}`
 
 Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI exits to avoid nested input conflicts.
 
+Built-in internal commands manage `tmux-commander` itself. In-app commands such as `Preview Themes`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup and return to the same query, selection, and scroll position. `Reload Config` reloads TOML and restarts the palette inside the same popup while preserving that position. `Open / Edit Config` is the exception: it exits the commander and opens `$EDITOR` in a tmux popup because the editor is an external interactive program.
+
 ## Controls
 
 - Type to filter commands.
@@ -275,7 +279,9 @@ Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI ex
 - Press `Enter` to select.
 - Press `Esc` or `Ctrl-C` to cancel.
 
-In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list.
+In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list at the previous position.
+
+Internal message views such as `Clear Recent Commands` and `List Config Path` stay inside the commander popup. Press `Esc` or `q` to return to the command list at the previous position.
 
 When the query is empty, commands are grouped by recent use and category. While filtering, category headers are hidden and results are sorted by fuzzy score with a small recency boost. Multi-token searches such as `split pane` are supported.
 
@@ -293,8 +299,11 @@ When the query is empty, commands are grouped by recent use and category. While 
 - New Session
 - Rename Session
 - Detach
-- Reload Config
 - Preview Themes
+- Clear Recent Commands
+- List Config Path
+- Open / Edit Config
+- Reload Config
 - Lazygit
 - Btop
 

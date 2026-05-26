@@ -2,6 +2,7 @@ package palette
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -21,9 +22,13 @@ type Model struct {
 	showGlyphs      bool
 	showDescription bool
 	recentKeys      []string
+	configPath      string
+	historyPath     string
 	styles          styles
 	mode            mode
 	query           string
+	messageTitle    string
+	messageBody     string
 	caretVisible    bool
 	cursor          int
 	offset          int
@@ -35,6 +40,13 @@ type Model struct {
 type Result struct {
 	Command *config.Command
 	Theme   theme.Theme
+	State   State
+}
+
+type State struct {
+	Query  string
+	Cursor int
+	Offset int
 }
 
 type mode int
@@ -42,6 +54,7 @@ type mode int
 const (
 	modeCommands mode = iota
 	modeThemePreview
+	modeMessage
 )
 
 const horizontalPadding = 3
@@ -100,7 +113,7 @@ func newStyles(t theme.Theme) styles {
 	}
 }
 
-func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string) Model {
+func New(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string, configPath string, historyPath string) Model {
 	return Model{
 		commands:        commands,
 		activeTheme:     active,
@@ -109,26 +122,48 @@ func New(commands []config.Command, active theme.Theme, previewThemes []theme.Th
 		showGlyphs:      showGlyphs,
 		showDescription: showDescription,
 		recentKeys:      append([]string{}, recentKeys...),
+		configPath:      configPath,
+		historyPath:     historyPath,
 		caretVisible:    true,
 		styles:          newStyles(active),
 	}
 }
 
-func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string) (Result, error) {
-	program := tea.NewProgram(New(commands, active, previewThemes, showGlyphs, showDescription, recentKeys), tea.WithAltScreen())
+func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string, configPath string, historyPath string) (Result, error) {
+	return RunWithState(commands, active, previewThemes, showGlyphs, showDescription, recentKeys, configPath, historyPath, State{})
+}
+
+func RunWithState(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string, configPath string, historyPath string, state State) (Result, error) {
+	model := New(commands, active, previewThemes, showGlyphs, showDescription, recentKeys, configPath, historyPath)
+	model.applyState(state)
+	program := tea.NewProgram(model, tea.WithAltScreen())
 	finalModel, err := program.Run()
 	if err != nil {
 		return Result{}, err
 	}
 	model, ok := finalModel.(Model)
 	if !ok {
-		return Result{Theme: active}, nil
+		return Result{Theme: active, State: state}, nil
 	}
-	return Result{Command: model.selected, Theme: model.activeTheme}, nil
+	return Result{Command: model.selected, Theme: model.activeTheme, State: model.state()}, nil
 }
 
 func (m Model) Init() tea.Cmd {
 	return blinkCursor()
+}
+
+func (m *Model) applyState(state State) {
+	m.query = state.Query
+	m.cursor = state.Cursor
+	m.offset = state.Offset
+}
+
+func (m Model) state() State {
+	return State{
+		Query:  m.query,
+		Cursor: m.cursor,
+		Offset: m.offset,
+	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -144,6 +179,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == modeThemePreview {
 			return m.updateThemePreview(msg)
 		}
+		if m.mode == modeMessage {
+			return m.updateMessage(msg)
+		}
 		switch msg.String() {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
@@ -153,10 +191,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd := matches[m.cursor].Command
 				if cmd.Internal == config.InternalThemePreview {
 					m.mode = modeThemePreview
-					m.query = ""
-					m.cursor = 0
 					m.previewIndex = previewIndex(m.previewThemes, m.activeTheme.Name)
 					m.styles = newStyles(m.previewThemes[m.previewIndex])
+					return m, nil
+				}
+				if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath {
+					m.openMessage(cmd.Internal)
 					return m, nil
 				}
 				m.selected = &cmd
@@ -219,6 +259,18 @@ func (m Model) updateThemePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) updateMessage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c":
+		return m, tea.Quit
+	case "esc", "q":
+		m.mode = modeCommands
+		m.messageTitle = ""
+		m.messageBody = ""
+	}
+	return m, nil
+}
+
 func (m Model) View() string {
 	if m.width == 0 {
 		return ""
@@ -228,6 +280,9 @@ func (m Model) View() string {
 	s := m.styles
 	if m.mode == modeThemePreview {
 		return m.viewThemePreview()
+	}
+	if m.mode == modeMessage {
+		return m.viewMessage()
 	}
 	var b strings.Builder
 	b.WriteString(m.renderSearchBox())
@@ -319,6 +374,65 @@ func (m Model) viewThemePreview() string {
 	b.WriteString("\n\n")
 	b.WriteString(s.muted.Render("Up/Down or Left/Right previews themes, Enter/Esc returns"))
 	return m.renderFrame(b.String())
+}
+
+func (m Model) viewMessage() string {
+	s := m.styles
+	var b strings.Builder
+	b.WriteString(m.renderSubviewHeader(m.messageTitle))
+	b.WriteString("\n\n")
+	for _, line := range strings.Split(m.messageBody, "\n") {
+		b.WriteString(m.renderMessageLine(line))
+		b.WriteString("\n")
+	}
+	b.WriteString("\n")
+	b.WriteString(s.muted.Render("Esc/q returns to commands"))
+	return m.renderFrame(b.String())
+}
+
+func (m Model) renderMessageLine(line string) string {
+	if isPathLine(line) {
+		return m.renderPathLine(line)
+	}
+	return m.styles.title.Render(line)
+}
+
+func (m Model) renderPathLine(line string) string {
+	bar := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(m.activeTheme.Glyph)).
+		Background(lipgloss.Color(m.activeTheme.Background)).
+		Render("▌")
+	path := m.styles.selected.Render(line)
+	return m.styles.root.Width(m.innerWidth()).Render(bar + path)
+}
+
+func isPathLine(line string) bool {
+	line = strings.TrimSpace(line)
+	return strings.HasPrefix(line, "/") || strings.HasPrefix(line, "~") || strings.Contains(line, ":\\")
+}
+
+func (m *Model) openMessage(internal string) {
+	switch internal {
+	case config.InternalClearRecent:
+		m.messageTitle = "Clear Recent Commands"
+		if m.historyPath == "" {
+			m.messageBody = "Recent command history is disabled."
+			break
+		}
+		if err := os.Remove(m.historyPath); err != nil && !os.IsNotExist(err) {
+			m.messageBody = "Could not clear recent command history:\n" + err.Error()
+			break
+		}
+		m.recentKeys = nil
+		m.messageBody = "Recent command history cleared:\n\n" + m.historyPath
+	case config.InternalConfigPath:
+		m.messageTitle = "Config Path"
+		m.messageBody = m.configPath
+	default:
+		m.messageTitle = "Message"
+		m.messageBody = ""
+	}
+	m.mode = modeMessage
 }
 
 func (m Model) renderSubviewHeader(title string) string {

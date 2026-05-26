@@ -168,10 +168,16 @@ func validateCommands(commands []Command) error {
 }
 
 func ensureInternalCommands(commands []Command) []Command {
+	existing := map[string]bool{}
 	for _, cmd := range commands {
-		if cmd.Internal == InternalThemePreview {
-			return commands
+		if cmd.Internal != "" {
+			existing[cmd.Internal] = true
 		}
 	}
-	return append(commands, ThemePreviewCommand())
+	for _, cmd := range SettingsCommands() {
+		if !existing[cmd.Internal] {
+			commands = append(commands, cmd)
+		}
+	}
+	return commands
 }

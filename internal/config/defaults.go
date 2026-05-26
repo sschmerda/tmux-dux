@@ -1,9 +1,17 @@
 package config
 
-const InternalThemePreview = "theme-preview"
+const (
+	InternalThemePreview = "theme-preview"
+	InternalClearRecent  = "clear-recent"
+	InternalConfigPath   = "config-path"
+	InternalEditConfig   = "edit-config"
+	InternalReloadConfig = "reload-config"
+
+	settingsCategory = "Settings tmux-commander"
+)
 
 func DefaultCommands() []Command {
-	return []Command{
+	commands := []Command{
 		{
 			Title:       "Find Pane",
 			Description: "Select a pane interactively",
@@ -112,17 +120,10 @@ func DefaultCommands() []Command {
 			Action:      "tmux",
 			Command:     "detach-client",
 		},
-		{
-			Title:       "Reload Config",
-			Description: "Reload ~/.tmux.conf",
-			Category:    "Tmux",
-			Aliases:     []string{"rc"},
-			Icon:        "󰑐",
-			Action:      "tmux",
-			Command:     "source-file ~/.tmux.conf \\; display-message 'tmux config reloaded'",
-		},
-		ThemePreviewCommand(),
-		{
+	}
+	commands = append(commands, SettingsCommands()...)
+	commands = append(commands,
+		Command{
 			Title:       "Lazygit",
 			Description: "Open lazygit in a popup",
 			Category:    "Tools",
@@ -131,7 +132,7 @@ func DefaultCommands() []Command {
 			Action:      "popup",
 			Command:     "lazygit",
 		},
-		{
+		Command{
 			Title:       "Btop",
 			Description: "Open btop in a popup",
 			Category:    "Tools",
@@ -140,6 +141,45 @@ func DefaultCommands() []Command {
 			Action:      "popup",
 			Command:     "btop",
 		},
+	)
+	return commands
+}
+
+func SettingsCommands() []Command {
+	return []Command{
+		ThemePreviewCommand(),
+		{
+			Title:       "Clear Recent Commands",
+			Description: "Delete the recent command history file",
+			Category:    settingsCategory,
+			Aliases:     []string{"cr"},
+			Icon:        "󰆴",
+			Internal:    InternalClearRecent,
+		},
+		{
+			Title:       "List Config Path",
+			Description: "Show the active TOML config path",
+			Category:    settingsCategory,
+			Aliases:     []string{"cp"},
+			Icon:        "󰈙",
+			Internal:    InternalConfigPath,
+		},
+		{
+			Title:       "Open / Edit Config",
+			Description: "Open the TOML config in $EDITOR",
+			Category:    settingsCategory,
+			Aliases:     []string{"ec"},
+			Icon:        "󰏫",
+			Internal:    InternalEditConfig,
+		},
+		{
+			Title:       "Reload Config",
+			Description: "Reload tmux-commander config by reopening the palette",
+			Category:    settingsCategory,
+			Aliases:     []string{"rc"},
+			Icon:        "󰑐",
+			Internal:    InternalReloadConfig,
+		},
 	}
 }
 
@@ -147,7 +187,7 @@ func ThemePreviewCommand() Command {
 	return Command{
 		Title:       "Preview Themes",
 		Description: "Preview built-in palette themes",
-		Category:    "Settings",
+		Category:    settingsCategory,
 		Aliases:     []string{"themes"},
 		Icon:        "󰔎",
 		Internal:    InternalThemePreview,

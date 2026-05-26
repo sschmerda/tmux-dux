@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -20,16 +21,13 @@ func main() {
 		return
 	}
 
-	cfg, _, err := config.Load()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: load config: %v\n", err)
-		os.Exit(1)
-	}
-
-	activeTheme := theme.ResolveWithCustom(cfg.UI.Theme, cfg.CustomTheme)
-	recentHistory, recentPath := loadRecentHistory(cfg)
-
 	if len(os.Args) > 1 {
+		cfg, _, err := config.Load()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "tmux-commander: load config: %v\n", err)
+			os.Exit(1)
+		}
+		activeTheme := theme.ResolveWithCustom(cfg.UI.Theme, cfg.CustomTheme)
 		switch os.Args[1] {
 		case "popup":
 			openConfiguredPopup(cfg, activeTheme)
@@ -40,13 +38,55 @@ func main() {
 		}
 	}
 
-	result, err := palette.Run(cfg.Commands, activeTheme, previewThemes(activeTheme), cfg.UI.Glyphs, cfg.UI.ShowDescription, recentHistory.RecentKeys(cfg.UI.RecentLimit))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: run palette: %v\n", err)
+	if err := runPalette(); err != nil {
+		fmt.Fprintf(os.Stderr, "tmux-commander: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func runPalette() error {
+	state := palette.State{}
+	for {
+		reload, nextState, err := runPaletteOnce(state)
+		if err != nil {
+			return err
+		}
+		if !reload {
+			return nil
+		}
+		state = nextState
+	}
+}
+
+func runPaletteOnce(state palette.State) (bool, palette.State, error) {
+	cfg, cfgPath, err := config.Load()
+	if err != nil {
+		return false, state, fmt.Errorf("load config: %w", err)
+	}
+
+	activeTheme := theme.ResolveWithCustom(cfg.UI.Theme, cfg.CustomTheme)
+	recentHistory, recentPath := loadRecentHistory(cfg)
+	if recentPath == "" {
+		if path, err := history.Path(); err == nil {
+			recentPath = path
+		}
+	}
+
+	result, err := palette.RunWithState(cfg.Commands, activeTheme, previewThemes(activeTheme), cfg.UI.Glyphs, cfg.UI.ShowDescription, recentHistory.RecentKeys(cfg.UI.RecentLimit), cfgPath, recentPath, state)
+	if err != nil {
+		return false, state, fmt.Errorf("run palette: %w", err)
+	}
 	if result.Command == nil {
-		return
+		return false, result.State, nil
+	}
+	if result.Command.Internal != "" {
+		if result.Command.Internal == config.InternalReloadConfig {
+			return true, result.State, nil
+		}
+		if err := runInternalCommand(*result.Command, cfgPath, activeTheme); err != nil {
+			return false, result.State, err
+		}
+		return false, result.State, nil
 	}
 	if cfg.UI.RecentCommands && cfg.UI.RecentLimit > 0 && recentPath != "" && result.Command.Internal == "" {
 		_, err := history.Record(recentPath, recentHistory, *result.Command, cfg.UI.RecentLimit, time.Now().UTC())
@@ -57,13 +97,70 @@ func main() {
 
 	action, err := actions.Build(*result.Command, cfg.UI, result.Theme)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: build action: %v\n", err)
-		os.Exit(1)
+		return false, result.State, fmt.Errorf("build action: %w", err)
 	}
 	if err := actions.Dispatch(action); err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: dispatch action: %v\n", err)
-		os.Exit(1)
+		return false, result.State, fmt.Errorf("dispatch action: %w", err)
 	}
+	return false, result.State, nil
+}
+
+func runInternalCommand(cmd config.Command, cfgPath string, activeTheme theme.Theme) error {
+	switch cmd.Internal {
+	case config.InternalEditConfig:
+		return editConfig(cfgPath, activeTheme)
+	default:
+		return fmt.Errorf("unknown internal command %q", cmd.Internal)
+	}
+}
+
+func editConfig(path string, activeTheme theme.Theme) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("create config directory: %w", err)
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+		if err != nil {
+			return fmt.Errorf("create config file: %w", err)
+		}
+		if err := file.Close(); err != nil {
+			return fmt.Errorf("close config file: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("stat config file: %w", err)
+	}
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "vi"
+	}
+	args := []string{"tmux", "display-popup", "-E", "-b", "rounded", "-w", "80%", "-h", "80%"}
+	if style := tmux.PopupStyle(activeTheme); style != "" {
+		args = append(args, "-s", style)
+	}
+	if borderStyle := tmux.PopupBorderStyle(activeTheme); borderStyle != "" {
+		args = append(args, "-S", borderStyle)
+	}
+	args = append(args, editor, path)
+	return actions.Dispatch(actions.Action{
+		Kind:    actions.KindTmux,
+		Command: "tmux",
+		Args:    []string{"run-shell", "-b", "sleep 0.05; " + shellJoin(args...)},
+	})
+}
+
+func shellJoin(args ...string) string {
+	quoted := make([]string, 0, len(args))
+	for _, arg := range args {
+		quoted = append(quoted, shellQuote(arg))
+	}
+	return strings.Join(quoted, " ")
+}
+
+func shellQuote(s string) string {
+	if s == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
 func loadRecentHistory(cfg config.Config) (history.File, string) {
