@@ -461,7 +461,8 @@ func (m Model) renderThemeList() string {
 		}
 		label := "  " + previewTheme.Name
 		if i == m.previewIndex {
-			b.WriteString(m.styles.selected.Width(m.innerWidth()).Render("  " + previewTheme.Name))
+			selectedLabel := m.styles.glyph.Render("▌") + m.styles.selected.Render(" "+previewTheme.Name)
+			b.WriteString(padSelectedRow(selectedLabel, m.innerWidth(), m.styles))
 			continue
 		}
 		b.WriteString(m.styles.title.Render(label))
@@ -859,11 +860,10 @@ func renderMatchedText(value string, style lipgloss.Style, matchStyle lipgloss.S
 }
 
 func rowIndent(selected bool, s styles) string {
-	indent := "  "
 	if selected {
-		return s.selected.Render(indent)
+		return s.glyph.Render("▌") + s.selected.Render(" ")
 	}
-	return indent
+	return "  "
 }
 
 func padSelectedRow(line string, width int, s styles) string {
