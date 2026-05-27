@@ -4,6 +4,7 @@ const (
 	InternalThemePreview = "theme-preview"
 	InternalClearRecent  = "clear-recent"
 	InternalConfigPath   = "config-path"
+	InternalControls     = "controls"
 	InternalEditConfig   = "edit-config"
 	InternalReloadConfig = "reload-config"
 
@@ -163,6 +164,14 @@ func SettingsCommands() []Command {
 			Aliases:     []string{"cp"},
 			Icon:        "󰈙",
 			Internal:    InternalConfigPath,
+		},
+		{
+			Title:       "Show Controls",
+			Description: "Show tmux-commander controls and hotkeys",
+			Category:    settingsCategory,
+			Aliases:     []string{"help"},
+			Icon:        "󰋖",
+			Internal:    InternalControls,
 		},
 		{
 			Title:       "Open / Edit Config",

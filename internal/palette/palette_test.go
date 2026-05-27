@@ -157,6 +157,34 @@ func TestConfigPathMessageShowsPath(t *testing.T) {
 	}
 }
 
+func TestControlsMessageShowsConfiguredToggleKey(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.tmuxModeKey = "ctrl+y"
+	model.openMessage(config.InternalControls)
+
+	if model.messageTitle != "Controls" {
+		t.Fatalf("message title = %q", model.messageTitle)
+	}
+	if !strings.Contains(model.messageBody, "Ctrl-Y") {
+		t.Fatalf("controls did not include configured key: %q", model.messageBody)
+	}
+	if !strings.Contains(model.messageBody, "tmux Command Arguments") {
+		t.Fatalf("controls did not include tmux argument section: %q", model.messageBody)
+	}
+	if !strings.Contains(model.messageBody, "Global\n────────\n") {
+		t.Fatalf("controls did not include section separator: %q", model.messageBody)
+	}
+}
+
+func TestControlsCategoriesAreDetected(t *testing.T) {
+	if !isControlsCategory("Global") || !isControlsCategory("tmux Command Arguments") {
+		t.Fatal("expected controls category")
+	}
+	if isControlsCategory("Enter              Select focused entry") {
+		t.Fatal("hotkey row detected as category")
+	}
+}
+
 func TestMessageLineHighlightsPaths(t *testing.T) {
 	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
 	model.width = 80

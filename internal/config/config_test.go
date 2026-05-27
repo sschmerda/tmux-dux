@@ -11,8 +11,8 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFile returned error: %v", err)
 	}
-	if got := len(cfg.Commands); got != 19 {
-		t.Fatalf("default command count = %d, want 19", got)
+	if got := len(cfg.Commands); got != 20 {
+		t.Fatalf("default command count = %d, want 20", got)
 	}
 	if cfg.UI.Width != "40%" || cfg.UI.PopupWidth != "80%" {
 		t.Fatalf("unexpected default UI: %#v", cfg.UI)
@@ -130,10 +130,10 @@ popup_height = "85%"
 	if cfg.Commands[0].PopupWidth != "95%" || cfg.Commands[0].PopupHeight != "85%" {
 		t.Fatalf("popup size = %q x %q", cfg.Commands[0].PopupWidth, cfg.Commands[0].PopupHeight)
 	}
-	if len(cfg.Commands) != 6 {
-		t.Fatalf("command count = %d, want 6", len(cfg.Commands))
+	if len(cfg.Commands) != 7 {
+		t.Fatalf("command count = %d, want 7", len(cfg.Commands))
 	}
-	for _, internal := range []string{InternalThemePreview, InternalClearRecent, InternalConfigPath, InternalEditConfig, InternalReloadConfig} {
+	for _, internal := range []string{InternalThemePreview, InternalClearRecent, InternalConfigPath, InternalControls, InternalEditConfig, InternalReloadConfig} {
 		found := false
 		for _, cmd := range cfg.Commands {
 			if cmd.Internal == internal {
@@ -269,6 +269,7 @@ func TestDefaultCommandsContainExpectedInitialSet(t *testing.T) {
 		"Preview Themes":        false,
 		"Clear Recent Commands": false,
 		"List Config Path":      false,
+		"Show Controls":         false,
 		"Open / Edit Config":    false,
 		"Reload Config":         false,
 		"Lazygit":               false,

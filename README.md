@@ -279,7 +279,7 @@ Popup actions start in the active tmux pane directory via `#{pane_current_path}`
 
 Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI exits to avoid nested input conflicts.
 
-Built-in internal commands manage `tmux-commander` itself. In-app commands such as `Preview Themes`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup and return to the same query, selection, and scroll position. `Reload Config` reloads TOML and restarts the palette inside the same popup while preserving that position. `Open / Edit Config` is the exception: it exits the commander and opens `$EDITOR` in a tmux popup because the editor is an external interactive program.
+Built-in internal commands manage `tmux-commander` itself. In-app commands such as `Preview Themes`, `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup and return to the same query, selection, and scroll position. `Reload Config` reloads TOML and restarts the palette inside the same popup while preserving that position. `Open / Edit Config` is the exception: it exits the commander and opens `$EDITOR` in a tmux popup because the editor is an external interactive program.
 
 ## Controls
 
@@ -290,11 +290,11 @@ Built-in internal commands manage `tmux-commander` itself. In-app commands such 
 - Press `Enter` to select.
 - Press `Esc` or `Ctrl-C` to cancel.
 
-In tmux-command mode, the palette fuzzy-searches tmux command names and shows the command usage next to each result when tmux exposes it. Selecting an argument-capable tmux command opens an argument input view inside commander. Press `Enter` from that view to run `tmux <command> <arguments>`, or `Esc` to return to the tmux command list without losing the previous selection.
+In tmux-command mode, the palette fuzzy-searches tmux command names. Selecting an argument-capable tmux command opens an argument input view inside commander. Press `Enter` from that view to run `tmux <command> <arguments>`, or `Esc` to return to the tmux command list without losing the previous selection.
 
 In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list at the previous position.
 
-Internal message views such as `Clear Recent Commands` and `List Config Path` stay inside the commander popup. Press `Esc` or `q` to return to the command list at the previous position.
+Internal message views such as `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup. Press `Esc` or `q` to return to the command list at the previous position.
 
 When the query is empty, commands are grouped by recent use and category. While filtering, category headers are hidden and results are sorted by fuzzy score with a small recency boost. Multi-token searches such as `split pane` are supported.
 
@@ -315,6 +315,7 @@ When the query is empty, commands are grouped by recent use and category. While 
 - Preview Themes
 - Clear Recent Commands
 - List Config Path
+- Show Controls
 - Open / Edit Config
 - Reload Config
 - Lazygit

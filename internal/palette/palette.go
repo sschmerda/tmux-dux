@@ -284,7 +284,7 @@ func (m Model) selectCommand() (tea.Model, tea.Cmd) {
 			m.styles = newStyles(m.previewThemes[m.previewIndex])
 			return m, nil
 		}
-		if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath {
+		if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath || cmd.Internal == config.InternalControls {
 			m.openMessage(cmd.Internal)
 			return m, nil
 		}
@@ -632,7 +632,27 @@ func (m Model) renderMessageLine(line string) string {
 	if isPathLine(line) {
 		return m.renderPathLine(line)
 	}
+	if isSeparatorLine(line) {
+		return m.styles.muted.Render(line)
+	}
+	if isControlsCategory(line) {
+		return m.styles.header.Render(line)
+	}
 	return m.styles.title.Render(line)
+}
+
+func isSeparatorLine(line string) bool {
+	line = strings.TrimSpace(line)
+	return line != "" && strings.Trim(line, "─") == ""
+}
+
+func isControlsCategory(line string) bool {
+	switch strings.TrimSpace(line) {
+	case "Global", "tmux Command Arguments", "Theme Preview", "Internal Messages":
+		return true
+	default:
+		return false
+	}
 }
 
 func (m Model) renderPathLine(line string) string {
@@ -666,11 +686,53 @@ func (m *Model) openMessage(internal string) {
 	case config.InternalConfigPath:
 		m.messageTitle = "Config Path"
 		m.messageBody = m.configPath
+	case config.InternalControls:
+		m.messageTitle = "Controls"
+		m.messageBody = m.controlsMessage()
 	default:
 		m.messageTitle = "Message"
 		m.messageBody = ""
 	}
 	m.mode = modeMessage
+}
+
+func (m Model) controlsMessage() string {
+	toggleKey := displayKey(m.tmuxModeKey)
+	return strings.Join([]string{
+		"Global",
+		"────────",
+		"Up / Ctrl-P        Move selection up",
+		"Down / Ctrl-N      Move selection down",
+		"Tab                Next category",
+		"Shift-Tab          Previous category",
+		"Enter              Select focused entry",
+		"Esc / Ctrl-C       Close commander",
+		controlLine(toggleKey, "Toggle command mode"),
+		"",
+		"tmux Command Arguments",
+		"────────",
+		"Enter              Run tmux command",
+		"Esc                Return to tmux command list",
+		"",
+		"Theme Preview",
+		"────────",
+		"Up / Left          Previous theme",
+		"Down / Right       Next theme",
+		"Enter / Esc        Return to command list",
+		"",
+		"Internal Messages",
+		"────────",
+		"Esc / q            Return to command list",
+	}, "\n")
+}
+
+func controlLine(key string, description string) string {
+	const descriptionColumn = 19
+	padding := descriptionColumn - lipgloss.Width(key)
+	if padding < 1 {
+		padding = 1
+	}
+	return key + strings.Repeat(" ", padding) + description
 }
 
 func (m Model) renderSubviewHeader(title string) string {
