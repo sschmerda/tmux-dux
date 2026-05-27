@@ -25,7 +25,7 @@ type Model struct {
 	showToggleHint  bool
 	tmuxDescription bool
 	recentKeys      []string
-	tmuxModeKey     string
+	keys            config.Keys
 	tmuxCommands    []tmuxcmd.Command
 	recentTmux      []tmuxcmd.Invocation
 	configPath      string
@@ -154,23 +154,21 @@ func New(commands []config.Command, active theme.Theme, previewThemes []theme.Th
 		recentKeys:      append([]string{}, recentKeys...),
 		configPath:      configPath,
 		historyPath:     historyPath,
-		tmuxModeKey:     "ctrl+t",
+		keys:            config.DefaultKeys(),
 		caretVisible:    true,
 		styles:          newStyles(active),
 	}
 }
 
 func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string, configPath string, historyPath string) (Result, error) {
-	return RunWithState(commands, active, previewThemes, showGlyphs, showDescription, true, true, recentKeys, "ctrl+t", nil, nil, configPath, historyPath, State{})
+	return RunWithState(commands, active, previewThemes, showGlyphs, showDescription, true, true, recentKeys, config.DefaultKeys(), nil, nil, configPath, historyPath, State{})
 }
 
-func RunWithState(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, showToggleHint bool, tmuxDescription bool, recentKeys []string, tmuxModeKey string, tmuxCommands []tmuxcmd.Command, recentTmux []tmuxcmd.Invocation, configPath string, historyPath string, state State) (Result, error) {
+func RunWithState(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, showToggleHint bool, tmuxDescription bool, recentKeys []string, keys config.Keys, tmuxCommands []tmuxcmd.Command, recentTmux []tmuxcmd.Invocation, configPath string, historyPath string, state State) (Result, error) {
 	model := New(commands, active, previewThemes, showGlyphs, showDescription, recentKeys, configPath, historyPath)
 	model.showToggleHint = showToggleHint
 	model.tmuxDescription = tmuxDescription
-	if strings.TrimSpace(tmuxModeKey) != "" {
-		model.tmuxModeKey = config.NormalizeKey(tmuxModeKey)
-	}
+	model.keys = normalizeKeys(keys)
 	model.tmuxCommands = append([]tmuxcmd.Command{}, tmuxCommands...)
 	model.recentTmux = append([]tmuxcmd.Invocation{}, recentTmux...)
 	model.applyState(state)
@@ -231,30 +229,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.selectTmuxCommand()
 			}
 			return m.selectCommand()
-		case m.tmuxModeKey:
+		case m.keys.TmuxMode:
 			m.toggleListMode()
-		case "up", "ctrl+p":
+		case "up", m.keys.MoveUp:
 			if m.cursor > 0 {
 				m.cursor--
 			}
 			m.ensureCursorVisible()
-		case "down", "ctrl+n":
+		case "down", m.keys.MoveDown:
 			if m.cursor < m.matchCount()-1 {
 				m.cursor++
 			}
 			m.ensureCursorVisible()
-		case "ctrl+y":
+		case m.keys.ScrollUp:
 			m.scrollViewport(-1)
-		case "ctrl+e":
+		case m.keys.ScrollDown:
 			m.scrollViewport(1)
-		case "ctrl+u":
+		case m.keys.HalfPageUp:
 			m.scrollList(-m.scrollHalfPage())
-		case "ctrl+d":
+		case m.keys.HalfPageDown:
 			m.scrollList(m.scrollHalfPage())
-		case "tab":
+		case m.keys.NextCategory:
 			m.moveToNextCategory()
 			m.ensureCursorVisible()
-		case "shift+tab":
+		case m.keys.PreviousCategory:
 			m.moveToPreviousCategory()
 			m.ensureCursorVisible()
 		case "backspace", "ctrl+h":
@@ -705,17 +703,20 @@ func (m *Model) openMessage(internal string) {
 }
 
 func (m Model) controlsMessage() string {
-	toggleKey := displayKey(m.tmuxModeKey)
 	return strings.Join([]string{
 		"Global",
 		"────────",
-		"Up / Ctrl-P        Move selection up",
-		"Down / Ctrl-N      Move selection down",
-		"Tab                Next category",
-		"Shift-Tab          Previous category",
+		controlLine("Up / "+displayKey(m.keys.MoveUp), "Move selection up"),
+		controlLine("Down / "+displayKey(m.keys.MoveDown), "Move selection down"),
+		controlLine(displayKey(m.keys.ScrollUp), "Scroll up one row"),
+		controlLine(displayKey(m.keys.ScrollDown), "Scroll down one row"),
+		controlLine(displayKey(m.keys.HalfPageUp), "Scroll up half page"),
+		controlLine(displayKey(m.keys.HalfPageDown), "Scroll down half page"),
+		controlLine(displayKey(m.keys.NextCategory), "Next category"),
+		controlLine(displayKey(m.keys.PreviousCategory), "Previous category"),
 		"Enter              Select focused entry",
 		"Esc / Ctrl-C       Close commander",
-		controlLine(toggleKey, "Toggle command mode"),
+		controlLine(displayKey(m.keys.TmuxMode), "Toggle command mode"),
 		"",
 		"tmux Command Arguments",
 		"────────",
@@ -1145,7 +1146,48 @@ func (m Model) renderModeHint() string {
 	if m.listMode == listModeTmux {
 		current = "tmux Commands"
 	}
-	return m.styles.muted.Render(fmt.Sprintf("Mode: %s · %s to toggle", current, displayKey(m.tmuxModeKey)))
+	return m.styles.muted.Render(fmt.Sprintf("Mode: %s · %s to toggle", current, displayKey(m.keys.TmuxMode)))
+}
+
+func normalizeKeys(keys config.Keys) config.Keys {
+	defaults := config.DefaultKeys()
+	if strings.TrimSpace(keys.TmuxMode) == "" {
+		keys.TmuxMode = defaults.TmuxMode
+	}
+	if strings.TrimSpace(keys.MoveUp) == "" {
+		keys.MoveUp = defaults.MoveUp
+	}
+	if strings.TrimSpace(keys.MoveDown) == "" {
+		keys.MoveDown = defaults.MoveDown
+	}
+	if strings.TrimSpace(keys.ScrollUp) == "" {
+		keys.ScrollUp = defaults.ScrollUp
+	}
+	if strings.TrimSpace(keys.ScrollDown) == "" {
+		keys.ScrollDown = defaults.ScrollDown
+	}
+	if strings.TrimSpace(keys.HalfPageUp) == "" {
+		keys.HalfPageUp = defaults.HalfPageUp
+	}
+	if strings.TrimSpace(keys.HalfPageDown) == "" {
+		keys.HalfPageDown = defaults.HalfPageDown
+	}
+	if strings.TrimSpace(keys.NextCategory) == "" {
+		keys.NextCategory = defaults.NextCategory
+	}
+	if strings.TrimSpace(keys.PreviousCategory) == "" {
+		keys.PreviousCategory = defaults.PreviousCategory
+	}
+	keys.TmuxMode = config.NormalizeKey(keys.TmuxMode)
+	keys.MoveUp = config.NormalizeKey(keys.MoveUp)
+	keys.MoveDown = config.NormalizeKey(keys.MoveDown)
+	keys.ScrollUp = config.NormalizeKey(keys.ScrollUp)
+	keys.ScrollDown = config.NormalizeKey(keys.ScrollDown)
+	keys.HalfPageUp = config.NormalizeKey(keys.HalfPageUp)
+	keys.HalfPageDown = config.NormalizeKey(keys.HalfPageDown)
+	keys.NextCategory = config.NormalizeKey(keys.NextCategory)
+	keys.PreviousCategory = config.NormalizeKey(keys.PreviousCategory)
+	return keys
 }
 
 func displayKey(key string) string {

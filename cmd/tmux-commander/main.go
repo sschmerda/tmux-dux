@@ -82,7 +82,7 @@ func runPaletteOnce(state palette.State) (bool, palette.State, error) {
 		cfg.UI.ShowToggleHint,
 		cfg.UI.TmuxDescription,
 		recentHistory.RecentKeys(cfg.UI.RecentLimit),
-		cfg.UI.TmuxModeKey,
+		cfg.Keys,
 		tmuxcmd.Load(),
 		recentHistory.RecentTmuxInvocations(cfg.UI.TmuxRecentLimit),
 		cfgPath,

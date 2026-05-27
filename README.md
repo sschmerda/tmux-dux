@@ -62,7 +62,17 @@ tmux_description = true
 recent_commands = true
 recent_limit = 10
 tmux_recent_limit = 10
-tmux_mode_key = "ctrl+t"
+
+[keys]
+tmux_mode = "ctrl+t"
+move_up = "ctrl+p"
+move_down = "ctrl+n"
+scroll_up = "ctrl+y"
+scroll_down = "ctrl+e"
+half_page_up = "ctrl+u"
+half_page_down = "ctrl+d"
+next_category = "tab"
+previous_category = "shift+tab"
 
 [[commands]]
 title = "Lazygit"
@@ -116,7 +126,22 @@ The commander popup is launched without a native tmux border and draws its own t
 | `recent_commands` | `true` | Enables the recent-command section and recency boost while filtering. |
 | `recent_limit` | `10` | Maximum number of recent commands to keep in state and show in the palette. Set to `0` to disable recents. |
 | `tmux_recent_limit` | `10` | Maximum number of recent tmux-command mode entries to keep in state and show in tmux-command mode. Set to `0` to disable tmux-command recents. |
-| `tmux_mode_key` | `"ctrl+t"` | Key used to toggle between configured commands and tmux-command mode. The active key is shown in the palette hint. |
+
+`[keys]` fields:
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `tmux_mode` | `"ctrl+t"` | Toggles between configured commands and tmux-command mode. The active key is shown in the palette hint and in `Show Controls`. |
+| `move_up` | `"ctrl+p"` | Moves the selection up. The `Up` arrow always remains available. |
+| `move_down` | `"ctrl+n"` | Moves the selection down. The `Down` arrow always remains available. |
+| `scroll_up` | `"ctrl+y"` | Scrolls the visible list up by one row without moving the selection at the list edge. |
+| `scroll_down` | `"ctrl+e"` | Scrolls the visible list down by one row without moving the selection at the list edge. |
+| `half_page_up` | `"ctrl+u"` | Moves the selection up by half a page. |
+| `half_page_down` | `"ctrl+d"` | Moves the selection down by half a page. |
+| `next_category` | `"tab"` | Jumps to the next command category when the query is empty. |
+| `previous_category` | `"shift+tab"` | Jumps to the previous command category when the query is empty. |
+
+Key names are normalized, so `ctrl-y` and `ctrl+y` are equivalent.
 
 `[[commands]]` fields:
 
@@ -284,13 +309,15 @@ Built-in internal commands manage `tmux-commander` itself. In-app commands such 
 ## Controls
 
 - Type to filter commands.
-- Use `Up` / `Down` or `Ctrl-P` / `Ctrl-N` to move.
-- Use `Ctrl-Y` / `Ctrl-E` to scroll one row up or down.
-- Use `Ctrl-U` / `Ctrl-D` to scroll half a page up or down.
-- Use `Tab` / `Shift-Tab` to jump between command categories.
+- Use `Up` / `Down`, or the configured movement keys, `Ctrl-P` / `Ctrl-N` by default, to move.
+- Use the configured one-row scroll keys, `Ctrl-Y` / `Ctrl-E` by default, to scroll the visible list.
+- Use the configured half-page keys, `Ctrl-U` / `Ctrl-D` by default, to move by half a page.
+- Use the configured category keys, `Tab` / `Shift-Tab` by default, to jump between command categories.
 - Press the configured toggle key, `Ctrl-T` by default, to switch between the configured command palette and tmux-command mode. The active key is shown below the search field.
 - Press `Enter` to select.
 - Press `Esc` or `Ctrl-C` to cancel.
+
+The `Show Controls` internal command displays the active key bindings after user config has been applied.
 
 In tmux-command mode, the palette fuzzy-searches tmux command names. Selecting an argument-capable tmux command opens an argument input view inside commander. Press `Enter` from that view to run `tmux <command> <arguments>`, or `Esc` to return to the tmux command list without losing the previous selection.
 

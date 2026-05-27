@@ -25,7 +25,18 @@ type UI struct {
 	RecentCommands  bool   `toml:"recent_commands"`
 	RecentLimit     int    `toml:"recent_limit"`
 	TmuxRecentLimit int    `toml:"tmux_recent_limit"`
-	TmuxModeKey     string `toml:"tmux_mode_key"`
+}
+
+type Keys struct {
+	TmuxMode         string `toml:"tmux_mode"`
+	MoveUp           string `toml:"move_up"`
+	MoveDown         string `toml:"move_down"`
+	ScrollUp         string `toml:"scroll_up"`
+	ScrollDown       string `toml:"scroll_down"`
+	HalfPageUp       string `toml:"half_page_up"`
+	HalfPageDown     string `toml:"half_page_down"`
+	NextCategory     string `toml:"next_category"`
+	PreviousCategory string `toml:"previous_category"`
 }
 
 type Command struct {
@@ -43,6 +54,7 @@ type Command struct {
 
 type Config struct {
 	UI          UI          `toml:"ui"`
+	Keys        Keys        `toml:"keys"`
 	CustomTheme theme.Theme `toml:"custom_theme"`
 	Commands    []Command   `toml:"commands"`
 }
@@ -62,13 +74,27 @@ func DefaultUI() UI {
 		RecentCommands:  true,
 		RecentLimit:     10,
 		TmuxRecentLimit: 10,
-		TmuxModeKey:     "ctrl+t",
+	}
+}
+
+func DefaultKeys() Keys {
+	return Keys{
+		TmuxMode:         "ctrl+t",
+		MoveUp:           "ctrl+p",
+		MoveDown:         "ctrl+n",
+		ScrollUp:         "ctrl+y",
+		ScrollDown:       "ctrl+e",
+		HalfPageUp:       "ctrl+u",
+		HalfPageDown:     "ctrl+d",
+		NextCategory:     "tab",
+		PreviousCategory: "shift+tab",
 	}
 }
 
 func DefaultConfig() Config {
 	return Config{
 		UI:       DefaultUI(),
+		Keys:     DefaultKeys(),
 		Commands: ensureInternalCommands(DefaultCommands()),
 	}
 }
@@ -115,10 +141,10 @@ func LoadFile(path string) (Config, error) {
 		RecentCommands  *bool  `toml:"recent_commands"`
 		RecentLimit     *int   `toml:"recent_limit"`
 		TmuxRecentLimit *int   `toml:"tmux_recent_limit"`
-		TmuxModeKey     string `toml:"tmux_mode_key"`
 	}
 	type rawConfig struct {
 		UI          rawUI       `toml:"ui"`
+		Keys        Keys        `toml:"keys"`
 		CustomTheme theme.Theme `toml:"custom_theme"`
 		Commands    []Command   `toml:"commands"`
 	}
@@ -127,11 +153,12 @@ func LoadFile(path string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	if err := rejectDeprecatedActionFields(meta); err != nil {
+	if err := rejectDeprecatedFields(meta); err != nil {
 		return Config{}, err
 	}
 	cfg := Config{
 		UI:          DefaultUI(),
+		Keys:        DefaultKeys(),
 		CustomTheme: raw.CustomTheme,
 		Commands:    raw.Commands,
 	}
@@ -174,10 +201,7 @@ func LoadFile(path string) (Config, error) {
 	if raw.UI.TmuxRecentLimit != nil {
 		cfg.UI.TmuxRecentLimit = *raw.UI.TmuxRecentLimit
 	}
-	if raw.UI.TmuxModeKey != "" {
-		cfg.UI.TmuxModeKey = raw.UI.TmuxModeKey
-	}
-	cfg.UI.TmuxModeKey = NormalizeKey(cfg.UI.TmuxModeKey)
+	applyKeys(&cfg.Keys, raw.Keys)
 	if cfg.UI.RecentLimit < 0 {
 		return Config{}, errors.New("ui.recent_limit must be >= 0")
 	}
@@ -200,12 +224,54 @@ func NormalizeKey(key string) string {
 	return key
 }
 
+func applyKeys(keys *Keys, raw Keys) {
+	if raw.TmuxMode != "" {
+		keys.TmuxMode = raw.TmuxMode
+	}
+	if raw.MoveUp != "" {
+		keys.MoveUp = raw.MoveUp
+	}
+	if raw.MoveDown != "" {
+		keys.MoveDown = raw.MoveDown
+	}
+	if raw.ScrollUp != "" {
+		keys.ScrollUp = raw.ScrollUp
+	}
+	if raw.ScrollDown != "" {
+		keys.ScrollDown = raw.ScrollDown
+	}
+	if raw.HalfPageUp != "" {
+		keys.HalfPageUp = raw.HalfPageUp
+	}
+	if raw.HalfPageDown != "" {
+		keys.HalfPageDown = raw.HalfPageDown
+	}
+	if raw.NextCategory != "" {
+		keys.NextCategory = raw.NextCategory
+	}
+	if raw.PreviousCategory != "" {
+		keys.PreviousCategory = raw.PreviousCategory
+	}
+	keys.TmuxMode = NormalizeKey(keys.TmuxMode)
+	keys.MoveUp = NormalizeKey(keys.MoveUp)
+	keys.MoveDown = NormalizeKey(keys.MoveDown)
+	keys.ScrollUp = NormalizeKey(keys.ScrollUp)
+	keys.ScrollDown = NormalizeKey(keys.ScrollDown)
+	keys.HalfPageUp = NormalizeKey(keys.HalfPageUp)
+	keys.HalfPageDown = NormalizeKey(keys.HalfPageDown)
+	keys.NextCategory = NormalizeKey(keys.NextCategory)
+	keys.PreviousCategory = NormalizeKey(keys.PreviousCategory)
+}
+
 func CommandKey(cmd Command) string {
 	return strings.ToLower(strings.TrimSpace(cmd.Action)) + ":" + strings.TrimSpace(cmd.Command)
 }
 
-func rejectDeprecatedActionFields(meta toml.MetaData) error {
+func rejectDeprecatedFields(meta toml.MetaData) error {
 	for _, key := range meta.Undecoded() {
+		if len(key) == 2 && key[0] == "ui" && key[1] == "tmux_mode_key" {
+			return errors.New("ui.tmux_mode_key is no longer supported; use keys.tmux_mode")
+		}
 		if len(key) == 2 && key[0] == "commands" {
 			switch key[1] {
 			case "tmux", "shell", "popup":

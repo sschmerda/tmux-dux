@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -29,8 +30,8 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if cfg.UI.TmuxRecentLimit != 10 {
 		t.Fatalf("tmux_recent_limit = %d, want 10", cfg.UI.TmuxRecentLimit)
 	}
-	if cfg.UI.TmuxModeKey != "ctrl+t" {
-		t.Fatalf("tmux_mode_key = %q, want ctrl+t", cfg.UI.TmuxModeKey)
+	if cfg.Keys.TmuxMode != "ctrl+t" || cfg.Keys.MoveUp != "ctrl+p" || cfg.Keys.MoveDown != "ctrl+n" || cfg.Keys.ScrollUp != "ctrl+y" || cfg.Keys.ScrollDown != "ctrl+e" || cfg.Keys.HalfPageUp != "ctrl+u" || cfg.Keys.HalfPageDown != "ctrl+d" || cfg.Keys.NextCategory != "tab" || cfg.Keys.PreviousCategory != "shift+tab" {
+		t.Fatalf("keys defaults = %#v", cfg.Keys)
 	}
 	if !cfg.UI.ShowToggleHint || !cfg.UI.TmuxDescription {
 		t.Fatalf("visibility defaults = toggle %v tmux description %v, want true true", cfg.UI.ShowToggleHint, cfg.UI.TmuxDescription)
@@ -50,7 +51,17 @@ tmux_description = false
 recent_commands = false
 recent_limit = 5
 tmux_recent_limit = 7
-tmux_mode_key = "ctrl-y"
+
+[keys]
+tmux_mode = "ctrl-y"
+move_up = "alt-k"
+move_down = "alt-j"
+scroll_up = "ctrl-k"
+scroll_down = "ctrl-j"
+half_page_up = "ctrl-b"
+half_page_down = "ctrl-f"
+next_category = "ctrl-n"
+previous_category = "ctrl-p"
 
 [custom_theme]
 background = "#111111"
@@ -118,8 +129,8 @@ popup_height = "85%"
 	if cfg.UI.TmuxRecentLimit != 7 {
 		t.Fatalf("tmux_recent_limit = %d, want 7", cfg.UI.TmuxRecentLimit)
 	}
-	if cfg.UI.TmuxModeKey != "ctrl+y" {
-		t.Fatalf("tmux_mode_key = %q, want ctrl+y", cfg.UI.TmuxModeKey)
+	if cfg.Keys.TmuxMode != "ctrl+y" || cfg.Keys.MoveUp != "alt+k" || cfg.Keys.MoveDown != "alt+j" || cfg.Keys.ScrollUp != "ctrl+k" || cfg.Keys.ScrollDown != "ctrl+j" || cfg.Keys.HalfPageUp != "ctrl+b" || cfg.Keys.HalfPageDown != "ctrl+f" || cfg.Keys.NextCategory != "ctrl+n" || cfg.Keys.PreviousCategory != "ctrl+p" {
+		t.Fatalf("keys = %#v", cfg.Keys)
 	}
 	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.CommanderBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
@@ -171,6 +182,24 @@ tmux = "display-panes"
 	}
 	if _, err := LoadFile(path); err == nil {
 		t.Fatal("LoadFile returned nil error")
+	}
+}
+
+func TestLoadFileRejectsLegacyTmuxModeKey(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[ui]
+tmux_mode_key = "ctrl-y"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	_, err := LoadFile(path)
+	if err == nil {
+		t.Fatal("LoadFile returned nil error for legacy tmux_mode_key")
+	}
+	if !strings.Contains(err.Error(), "keys.tmux_mode") {
+		t.Fatalf("error = %q, want keys.tmux_mode guidance", err.Error())
 	}
 }
 

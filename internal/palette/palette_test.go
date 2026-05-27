@@ -208,7 +208,7 @@ func TestConfigPathMessageShowsPath(t *testing.T) {
 
 func TestControlsMessageShowsConfiguredToggleKey(t *testing.T) {
 	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
-	model.tmuxModeKey = "ctrl+y"
+	model.keys.TmuxMode = "ctrl+y"
 	model.openMessage(config.InternalControls)
 
 	if model.messageTitle != "Controls" {
@@ -339,7 +339,7 @@ func TestCtrlTTogglesTmuxCommandMode(t *testing.T) {
 
 func TestConfiguredKeyTogglesTmuxCommandMode(t *testing.T) {
 	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
-	model.tmuxModeKey = "ctrl+y"
+	model.keys.TmuxMode = "ctrl+y"
 	model.tmuxCommands = []tmuxcmd.Command{{Name: "split-window", Usage: "[-h]", TakesArgs: true}}
 
 	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyCtrlY})
@@ -351,7 +351,7 @@ func TestConfiguredKeyTogglesTmuxCommandMode(t *testing.T) {
 
 func TestRenderModeHintShowsConfiguredKey(t *testing.T) {
 	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
-	model.tmuxModeKey = "ctrl+y"
+	model.keys.TmuxMode = "ctrl+y"
 
 	hint := model.renderModeHint()
 	if !strings.Contains(hint, "Mode: Commands") || !strings.Contains(hint, "Ctrl-Y to toggle") {
