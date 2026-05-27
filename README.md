@@ -285,6 +285,8 @@ Built-in internal commands manage `tmux-commander` itself. In-app commands such 
 
 - Type to filter commands.
 - Use `Up` / `Down` or `Ctrl-P` / `Ctrl-N` to move.
+- Use `Ctrl-Y` / `Ctrl-E` to scroll one row up or down.
+- Use `Ctrl-U` / `Ctrl-D` to scroll half a page up or down.
 - Use `Tab` / `Shift-Tab` to jump between command categories.
 - Press the configured toggle key, `Ctrl-T` by default, to switch between the configured command palette and tmux-command mode. The active key is shown below the search field.
 - Press `Enter` to select.

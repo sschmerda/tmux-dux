@@ -243,6 +243,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 			m.ensureCursorVisible()
+		case "ctrl+y":
+			m.scrollViewport(-1)
+		case "ctrl+e":
+			m.scrollViewport(1)
+		case "ctrl+u":
+			m.scrollList(-m.scrollHalfPage())
+		case "ctrl+d":
+			m.scrollList(m.scrollHalfPage())
 		case "tab":
 			m.moveToNextCategory()
 			m.ensureCursorVisible()
@@ -1001,6 +1009,49 @@ func (m *Model) moveToPreviousCategory() {
 	}
 	matches := m.matches()
 	m.cursor = previousCategoryIndex(matches, m.cursor)
+}
+
+func (m *Model) scrollList(delta int) {
+	count := m.matchCount()
+	if count == 0 || delta == 0 {
+		return
+	}
+	m.cursor = clampCursor(m.cursor+delta, count)
+	m.offset = clampCursor(m.offset+delta, count)
+	m.ensureCursorVisible()
+}
+
+func (m *Model) scrollViewport(delta int) {
+	count := m.matchCount()
+	if count == 0 || delta == 0 {
+		return
+	}
+	nextOffset := m.offset + delta
+	if nextOffset < 0 {
+		return
+	}
+	if delta > 0 && m.isLastMatchVisible() {
+		return
+	}
+	m.offset = clampCursor(nextOffset, count)
+}
+
+func (m Model) scrollHalfPage() int {
+	halfPage := m.commandLineBudget() / 2
+	if halfPage < 1 {
+		return 1
+	}
+	return halfPage
+}
+
+func (m Model) isLastMatchVisible() bool {
+	count := m.matchCount()
+	if count == 0 {
+		return true
+	}
+	saved := m
+	saved.cursor = count - 1
+	return saved.cursorVisible()
 }
 
 func nextCategoryIndex(matches []fuzzy.Match, cursor int) int {

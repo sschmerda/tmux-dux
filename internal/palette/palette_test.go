@@ -1,6 +1,7 @@
 package palette
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -62,6 +63,54 @@ func TestPreviousCategoryIndexDoesNotMoveWhenOnlyOneCategoryIsVisible(t *testing
 
 	if got := previousCategoryIndex(matches, 1); got != 1 {
 		t.Fatalf("previousCategoryIndex = %d, want 1", got)
+	}
+}
+
+func TestScrollListMovesCursorAndOffset(t *testing.T) {
+	model := New(commandList(20), theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 80
+	model.height = 12
+	model.cursor = 4
+	model.offset = 2
+
+	model.scrollList(1)
+	if model.cursor != 5 || model.offset <= 2 {
+		t.Fatalf("after scroll down cursor=%d offset=%d, want cursor 5 and offset advanced", model.cursor, model.offset)
+	}
+
+	model.scrollList(-1)
+	if model.cursor != 4 || model.offset >= 4 {
+		t.Fatalf("after scroll up cursor=%d offset=%d, want cursor 4 and offset reduced", model.cursor, model.offset)
+	}
+}
+
+func TestScrollViewportDoesNotMoveCursorAtEdges(t *testing.T) {
+	model := New(commandList(20), theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 80
+	model.height = 12
+	model.cursor = 0
+	model.offset = 0
+
+	model.scrollViewport(-1)
+	if model.cursor != 0 || model.offset != 0 {
+		t.Fatalf("top scroll cursor=%d offset=%d, want 0 0", model.cursor, model.offset)
+	}
+
+	model.cursor = 5
+	model.offset = 2
+	model.scrollViewport(1)
+	if model.cursor != 5 || model.offset <= 2 {
+		t.Fatalf("scroll down cursor=%d offset=%d, want cursor unchanged and offset advanced", model.cursor, model.offset)
+	}
+}
+
+func TestScrollHalfPageHasMinimumOneLine(t *testing.T) {
+	model := New(commandList(3), theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 80
+	model.height = 1
+
+	if got := model.scrollHalfPage(); got != 1 {
+		t.Fatalf("scrollHalfPage = %d, want 1", got)
 	}
 }
 
@@ -464,4 +513,17 @@ func categoryMatches(categories ...string) []fuzzy.Match {
 		})
 	}
 	return matches
+}
+
+func commandList(count int) []config.Command {
+	commands := make([]config.Command, 0, count)
+	for i := 0; i < count; i++ {
+		commands = append(commands, config.Command{
+			Title:    fmt.Sprintf("Command %02d", i),
+			Category: "Test",
+			Action:   "tmux",
+			Command:  fmt.Sprintf("display-message %d", i),
+		})
+	}
+	return commands
 }
