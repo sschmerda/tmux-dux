@@ -59,6 +59,10 @@ func Build(cmd config.Command, ui config.UI, t theme.Theme) (Action, error) {
 	}
 }
 
+func BuildTmuxCommand(command string) Action {
+	return deferredTmuxAction(KindTmux, "tmux "+strings.TrimSpace(command))
+}
+
 func Dispatch(action Action) error {
 	cmd := exec.Command(action.Command, action.Args...)
 	cmd.Stdin = os.Stdin

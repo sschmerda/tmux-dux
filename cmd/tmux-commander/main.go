@@ -13,6 +13,7 @@ import (
 	"github.com/stefanschmerda/tmux-commander/internal/palette"
 	"github.com/stefanschmerda/tmux-commander/internal/theme"
 	"github.com/stefanschmerda/tmux-commander/internal/tmux"
+	"github.com/stefanschmerda/tmux-commander/internal/tmuxcmd"
 )
 
 func main() {
@@ -72,9 +73,37 @@ func runPaletteOnce(state palette.State) (bool, palette.State, error) {
 		}
 	}
 
-	result, err := palette.RunWithState(cfg.Commands, activeTheme, previewThemes(activeTheme), cfg.UI.Glyphs, cfg.UI.ShowDescription, recentHistory.RecentKeys(cfg.UI.RecentLimit), cfgPath, recentPath, state)
+	result, err := palette.RunWithState(
+		cfg.Commands,
+		activeTheme,
+		previewThemes(activeTheme),
+		cfg.UI.Glyphs,
+		cfg.UI.ShowDescription,
+		cfg.UI.ShowToggleHint,
+		cfg.UI.TmuxDescription,
+		recentHistory.RecentKeys(cfg.UI.RecentLimit),
+		cfg.UI.TmuxModeKey,
+		tmuxcmd.Load(),
+		recentHistory.RecentTmuxInvocations(cfg.UI.TmuxRecentLimit),
+		cfgPath,
+		recentPath,
+		state,
+	)
 	if err != nil {
 		return false, state, fmt.Errorf("run palette: %w", err)
+	}
+	if result.Tmux != nil {
+		if cfg.UI.RecentCommands && cfg.UI.TmuxRecentLimit > 0 && recentPath != "" {
+			_, err := history.RecordTmuxWithLimits(recentPath, recentHistory, *result.Tmux, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit, time.Now().UTC())
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "tmux-commander: update tmux history: %v\n", err)
+			}
+		}
+		action := actions.BuildTmuxCommand(result.Tmux.CommandLine())
+		if err := actions.Dispatch(action); err != nil {
+			return false, result.State, fmt.Errorf("dispatch tmux command: %w", err)
+		}
+		return false, result.State, nil
 	}
 	if result.Command == nil {
 		return false, result.State, nil
@@ -89,7 +118,7 @@ func runPaletteOnce(state palette.State) (bool, palette.State, error) {
 		return false, result.State, nil
 	}
 	if cfg.UI.RecentCommands && cfg.UI.RecentLimit > 0 && recentPath != "" && result.Command.Internal == "" {
-		_, err := history.Record(recentPath, recentHistory, *result.Command, cfg.UI.RecentLimit, time.Now().UTC())
+		_, err := history.RecordWithLimits(recentPath, recentHistory, *result.Command, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit, time.Now().UTC())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "tmux-commander: update history: %v\n", err)
 		}
@@ -164,7 +193,7 @@ func shellQuote(s string) string {
 }
 
 func loadRecentHistory(cfg config.Config) (history.File, string) {
-	if !cfg.UI.RecentCommands || cfg.UI.RecentLimit <= 0 {
+	if !cfg.UI.RecentCommands || (cfg.UI.RecentLimit <= 0 && cfg.UI.TmuxRecentLimit <= 0) {
 		return history.File{}, ""
 	}
 	file, path, err := history.LoadDefault()
@@ -172,8 +201,8 @@ func loadRecentHistory(cfg config.Config) (history.File, string) {
 		fmt.Fprintf(os.Stderr, "tmux-commander: load history: %v\n", err)
 		return history.File{}, path
 	}
-	trimmed := history.Trim(file, cfg.UI.RecentLimit)
-	if len(trimmed.Entries) != len(file.Entries) {
+	trimmed := history.TrimWithLimits(file, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit)
+	if len(trimmed.Entries) != len(file.Entries) || len(trimmed.TmuxEntries) != len(file.TmuxEntries) {
 		if err := history.Save(path, trimmed); err != nil {
 			fmt.Fprintf(os.Stderr, "tmux-commander: trim history: %v\n", err)
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/stefanschmerda/tmux-commander/internal/config"
 	"github.com/stefanschmerda/tmux-commander/internal/fuzzy"
 	"github.com/stefanschmerda/tmux-commander/internal/theme"
+	"github.com/stefanschmerda/tmux-commander/internal/tmuxcmd"
 )
 
 type Model struct {
@@ -21,24 +22,34 @@ type Model struct {
 	previewIndex    int
 	showGlyphs      bool
 	showDescription bool
+	showToggleHint  bool
+	tmuxDescription bool
 	recentKeys      []string
+	tmuxModeKey     string
+	tmuxCommands    []tmuxcmd.Command
+	recentTmux      []tmuxcmd.Invocation
 	configPath      string
 	historyPath     string
 	styles          styles
 	mode            mode
+	listMode        listMode
 	query           string
 	messageTitle    string
 	messageBody     string
+	argCommand      tmuxcmd.Command
+	argValue        string
 	caretVisible    bool
 	cursor          int
 	offset          int
 	selected        *config.Command
+	selectedTmux    *tmuxcmd.Invocation
 	width           int
 	height          int
 }
 
 type Result struct {
 	Command *config.Command
+	Tmux    *tmuxcmd.Invocation
 	Theme   theme.Theme
 	State   State
 }
@@ -55,6 +66,14 @@ const (
 	modeCommands mode = iota
 	modeThemePreview
 	modeMessage
+	modeTmuxArgs
+)
+
+type listMode int
+
+const (
+	listModeCommands listMode = iota
+	listModeTmux
 )
 
 const horizontalPadding = 3
@@ -63,9 +82,18 @@ const cursorBlinkInterval = 500 * time.Millisecond
 
 const recentCategory = "Recent"
 
+const tmuxCommandCategory = "tmux Commands"
+
 const recentScoreBoost = 50
 
 type cursorBlinkMsg struct{}
+
+type tmuxMatch struct {
+	Match      fuzzy.Match
+	Command    tmuxcmd.Command
+	Invocation tmuxcmd.Invocation
+	Recent     bool
+}
 
 type styles struct {
 	root          lipgloss.Style
@@ -121,20 +149,30 @@ func New(commands []config.Command, active theme.Theme, previewThemes []theme.Th
 		previewIndex:    previewIndex(previewThemes, active.Name),
 		showGlyphs:      showGlyphs,
 		showDescription: showDescription,
+		showToggleHint:  true,
+		tmuxDescription: true,
 		recentKeys:      append([]string{}, recentKeys...),
 		configPath:      configPath,
 		historyPath:     historyPath,
+		tmuxModeKey:     "ctrl+t",
 		caretVisible:    true,
 		styles:          newStyles(active),
 	}
 }
 
 func Run(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string, configPath string, historyPath string) (Result, error) {
-	return RunWithState(commands, active, previewThemes, showGlyphs, showDescription, recentKeys, configPath, historyPath, State{})
+	return RunWithState(commands, active, previewThemes, showGlyphs, showDescription, true, true, recentKeys, "ctrl+t", nil, nil, configPath, historyPath, State{})
 }
 
-func RunWithState(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, recentKeys []string, configPath string, historyPath string, state State) (Result, error) {
+func RunWithState(commands []config.Command, active theme.Theme, previewThemes []theme.Theme, showGlyphs bool, showDescription bool, showToggleHint bool, tmuxDescription bool, recentKeys []string, tmuxModeKey string, tmuxCommands []tmuxcmd.Command, recentTmux []tmuxcmd.Invocation, configPath string, historyPath string, state State) (Result, error) {
 	model := New(commands, active, previewThemes, showGlyphs, showDescription, recentKeys, configPath, historyPath)
+	model.showToggleHint = showToggleHint
+	model.tmuxDescription = tmuxDescription
+	if strings.TrimSpace(tmuxModeKey) != "" {
+		model.tmuxModeKey = config.NormalizeKey(tmuxModeKey)
+	}
+	model.tmuxCommands = append([]tmuxcmd.Command{}, tmuxCommands...)
+	model.recentTmux = append([]tmuxcmd.Invocation{}, recentTmux...)
 	model.applyState(state)
 	program := tea.NewProgram(model, tea.WithAltScreen())
 	finalModel, err := program.Run()
@@ -145,7 +183,7 @@ func RunWithState(commands []config.Command, active theme.Theme, previewThemes [
 	if !ok {
 		return Result{Theme: active, State: state}, nil
 	}
-	return Result{Command: model.selected, Theme: model.activeTheme, State: model.state()}, nil
+	return Result{Command: model.selected, Tmux: model.selectedTmux, Theme: model.activeTheme, State: model.state()}, nil
 }
 
 func (m Model) Init() tea.Cmd {
@@ -182,33 +220,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == modeMessage {
 			return m.updateMessage(msg)
 		}
+		if m.mode == modeTmuxArgs {
+			return m.updateTmuxArgs(msg)
+		}
 		switch msg.String() {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
 		case "enter":
-			matches := m.matches()
-			if len(matches) > 0 {
-				cmd := matches[m.cursor].Command
-				if cmd.Internal == config.InternalThemePreview {
-					m.mode = modeThemePreview
-					m.previewIndex = previewIndex(m.previewThemes, m.activeTheme.Name)
-					m.styles = newStyles(m.previewThemes[m.previewIndex])
-					return m, nil
-				}
-				if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath {
-					m.openMessage(cmd.Internal)
-					return m, nil
-				}
-				m.selected = &cmd
+			if m.listMode == listModeTmux {
+				return m.selectTmuxCommand()
 			}
-			return m, tea.Quit
+			return m.selectCommand()
+		case m.tmuxModeKey:
+			m.toggleListMode()
 		case "up", "ctrl+p":
 			if m.cursor > 0 {
 				m.cursor--
 			}
 			m.ensureCursorVisible()
 		case "down", "ctrl+n":
-			if m.cursor < len(m.matches())-1 {
+			if m.cursor < m.matchCount()-1 {
 				m.cursor++
 			}
 			m.ensureCursorVisible()
@@ -243,6 +274,59 @@ func blinkCursor() tea.Cmd {
 	})
 }
 
+func (m Model) selectCommand() (tea.Model, tea.Cmd) {
+	matches := m.matches()
+	if len(matches) > 0 {
+		cmd := matches[m.cursor].Command
+		if cmd.Internal == config.InternalThemePreview {
+			m.mode = modeThemePreview
+			m.previewIndex = previewIndex(m.previewThemes, m.activeTheme.Name)
+			m.styles = newStyles(m.previewThemes[m.previewIndex])
+			return m, nil
+		}
+		if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath {
+			m.openMessage(cmd.Internal)
+			return m, nil
+		}
+		m.selected = &cmd
+	}
+	return m, tea.Quit
+}
+
+func (m Model) selectTmuxCommand() (tea.Model, tea.Cmd) {
+	matches := m.tmuxMatches()
+	if len(matches) == 0 {
+		return m, nil
+	}
+	selected := matches[m.cursor]
+	if selected.Recent {
+		invocation := selected.Invocation
+		m.selectedTmux = &invocation
+		return m, tea.Quit
+	}
+	m.argCommand = selected.Command
+	m.argValue = ""
+	if !selected.Command.TakesArgs {
+		invocation := tmuxcmd.Invocation{Name: selected.Command.Name}
+		m.selectedTmux = &invocation
+		return m, tea.Quit
+	}
+	m.mode = modeTmuxArgs
+	m.caretVisible = true
+	return m, nil
+}
+
+func (m *Model) toggleListMode() {
+	if m.listMode == listModeTmux {
+		m.listMode = listModeCommands
+	} else {
+		m.listMode = listModeTmux
+	}
+	m.cursor = 0
+	m.offset = 0
+	m.caretVisible = true
+}
+
 func (m Model) updateThemePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c":
@@ -255,6 +339,31 @@ func (m Model) updateThemePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.previousTheme()
 	case "down", "right", "ctrl+n":
 		m.nextTheme()
+	}
+	return m, nil
+}
+
+func (m Model) updateTmuxArgs(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c":
+		return m, tea.Quit
+	case "esc":
+		m.mode = modeCommands
+		m.argValue = ""
+	case "enter":
+		invocation := tmuxcmd.Invocation{Name: m.argCommand.Name, Args: m.argValue}
+		m.selectedTmux = &invocation
+		return m, tea.Quit
+	case "backspace", "ctrl+h":
+		if len(m.argValue) > 0 {
+			m.argValue = m.argValue[:len(m.argValue)-1]
+			m.caretVisible = true
+		}
+	default:
+		if len(msg.Runes) > 0 {
+			m.argValue += string(msg.Runes)
+			m.caretVisible = true
+		}
 	}
 	return m, nil
 }
@@ -276,7 +385,6 @@ func (m Model) View() string {
 		return ""
 	}
 
-	matches := m.matches()
 	s := m.styles
 	if m.mode == modeThemePreview {
 		return m.viewThemePreview()
@@ -284,8 +392,19 @@ func (m Model) View() string {
 	if m.mode == modeMessage {
 		return m.viewMessage()
 	}
+	if m.mode == modeTmuxArgs {
+		return m.viewTmuxArgs()
+	}
+	if m.listMode == listModeTmux {
+		return m.viewTmuxCommands()
+	}
+	matches := m.matches()
 	var b strings.Builder
 	b.WriteString(m.renderSearchBox())
+	if m.showToggleHint {
+		b.WriteString("\n")
+		b.WriteString(m.renderModeHint())
+	}
 	b.WriteString("\n\n")
 
 	if len(matches) == 0 {
@@ -345,6 +464,65 @@ func (m Model) View() string {
 	return m.renderFrame(b.String())
 }
 
+func (m Model) viewTmuxCommands() string {
+	matches := m.tmuxMatches()
+	s := m.styles
+	var b strings.Builder
+	b.WriteString(m.renderSearchBox())
+	if m.showToggleHint {
+		b.WriteString("\n")
+		b.WriteString(m.renderModeHint())
+	}
+	b.WriteString("\n\n")
+
+	if len(matches) == 0 {
+		b.WriteString("\n")
+		b.WriteString(s.empty.Render("No tmux commands found"))
+		return m.renderFrame(b.String())
+	}
+
+	lastCategory := ""
+	showHeaders := strings.TrimSpace(m.query) == ""
+	lineBudget := m.commandLineBudget()
+	linesUsed := 0
+	start := m.offset
+	if start >= len(matches) {
+		start = max(0, len(matches)-1)
+	}
+
+	for rowIndex := start; rowIndex < len(matches); rowIndex++ {
+		match := matches[rowIndex].Match
+		cmd := match.Command
+		if showHeaders && cmd.Category != lastCategory {
+			if lastCategory == recentCategory {
+				if linesUsed+1 > lineBudget {
+					break
+				}
+				b.WriteString(m.renderRecentDivider())
+				b.WriteString("\n")
+				linesUsed++
+			}
+			if linesUsed+1 > lineBudget {
+				break
+			}
+			b.WriteString(s.header.Render(cmd.Category))
+			b.WriteString("\n")
+			lastCategory = cmd.Category
+			linesUsed++
+		}
+
+		selected := rowIndex == m.cursor
+		row := renderRow(match, s, selected, m.showGlyphs, m.tmuxDescription, m.innerWidth())
+		if linesUsed+1 > lineBudget {
+			break
+		}
+		b.WriteString(row)
+		b.WriteString("\n")
+		linesUsed++
+	}
+	return m.renderFrame(b.String())
+}
+
 func (m Model) viewThemePreview() string {
 	s := m.styles
 	var b strings.Builder
@@ -388,6 +566,66 @@ func (m Model) viewMessage() string {
 	b.WriteString("\n")
 	b.WriteString(s.muted.Render("Esc/q returns to commands"))
 	return m.renderFrame(b.String())
+}
+
+func (m Model) viewTmuxArgs() string {
+	s := m.styles
+	var b strings.Builder
+	b.WriteString(m.renderSubviewHeader("tmux Command Arguments"))
+	b.WriteString("\n\n")
+	b.WriteString(s.header.Render(m.argCommand.Name))
+	if m.argCommand.Description != "" {
+		b.WriteString("\n")
+		b.WriteString(s.muted.Render(m.argCommand.Description))
+	}
+	if m.argCommand.Usage != "" {
+		b.WriteString("\n\n")
+		b.WriteString(s.desc.Render(m.argCommand.Usage))
+	}
+	if len(m.argCommand.ArgHelp) > 0 {
+		b.WriteString("\n\n")
+		for _, line := range m.argCommand.ArgHelp {
+			b.WriteString(s.muted.Render(line))
+			b.WriteString("\n")
+		}
+	}
+	b.WriteString("\n\n")
+	b.WriteString(m.renderArgumentBox())
+	b.WriteString("\n\n")
+	b.WriteString(s.muted.Render("Enter runs tmux command, Esc returns to command list"))
+	return m.renderFrame(b.String())
+}
+
+func (m Model) renderArgumentBox() string {
+	width := m.innerWidth()
+	fill := m.activeTheme.SearchBG
+	contentWidth := width - 4
+	if contentWidth < 1 {
+		contentWidth = 1
+	}
+
+	valueStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.SearchFG)).Background(lipgloss.Color(fill))
+	cursor := " "
+	if m.caretVisible {
+		cursor = "█"
+	}
+	promptStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.Glyph)).Background(lipgloss.Color(fill))
+	prompt := "args ❯ "
+	prefix := promptStyle.Render(prompt)
+	inputBudget := contentWidth - lipgloss.Width(prompt) - lipgloss.Width(cursor)
+	if inputBudget < 1 {
+		inputBudget = 1
+	}
+	content := prefix + valueStyle.Render(truncate(m.argValue, inputBudget)) + promptStyle.Render(cursor)
+
+	return lipgloss.NewStyle().
+		Width(width-2).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(m.activeTheme.PromptBorder)).
+		BorderBackground(lipgloss.Color(m.activeTheme.Background)).
+		Background(lipgloss.Color(fill)).
+		Padding(0, 1).
+		Render(content)
 }
 
 func (m Model) renderMessageLine(line string) string {
@@ -518,6 +756,104 @@ func (m Model) matches() []fuzzy.Match {
 	return matches
 }
 
+func (m Model) tmuxMatches() []tmuxMatch {
+	commands := m.tmuxCommandsForQuery()
+	matches := fuzzy.Filter(commands, m.query)
+	result := make([]tmuxMatch, 0, len(matches))
+	for _, match := range matches {
+		tmuxCommand, invocation, recent := m.tmuxMatchData(match.Command)
+		if strings.TrimSpace(m.query) != "" {
+			match.Score += m.recentTmuxBoost(invocation.Key())
+		}
+		result = append(result, tmuxMatch{
+			Match:      match,
+			Command:    tmuxCommand,
+			Invocation: invocation,
+			Recent:     recent,
+		})
+	}
+	if strings.TrimSpace(m.query) != "" {
+		sort.SliceStable(result, func(i, j int) bool {
+			if result[i].Match.Score == result[j].Match.Score {
+				return result[i].Match.Command.Title < result[j].Match.Command.Title
+			}
+			return result[i].Match.Score > result[j].Match.Score
+		})
+	}
+	return result
+}
+
+func (m Model) tmuxCommandsForQuery() []config.Command {
+	if strings.TrimSpace(m.query) == "" {
+		return m.tmuxCommandsForEmptyQuery()
+	}
+	commands := make([]config.Command, 0, len(m.tmuxCommands))
+	for _, cmd := range m.tmuxCommands {
+		commands = append(commands, tmuxCommandToConfig(cmd, tmuxCommandCategory))
+	}
+	return commands
+}
+
+func (m Model) tmuxCommandsForEmptyQuery() []config.Command {
+	commands := make([]config.Command, 0, len(m.recentTmux)+len(m.tmuxCommands))
+	for _, invocation := range m.recentTmux {
+		title := invocation.Name
+		description := invocation.Args
+		if description == "" {
+			description = "Run without arguments"
+		}
+		commands = append(commands, config.Command{
+			Title:       title,
+			Description: description,
+			Category:    recentCategory,
+			Action:      "tmux",
+			Command:     invocation.CommandLine(),
+			Icon:        "▸",
+		})
+	}
+	for _, cmd := range m.tmuxCommands {
+		commands = append(commands, tmuxCommandToConfig(cmd, tmuxCommandCategory))
+	}
+	return commands
+}
+
+func tmuxCommandToConfig(cmd tmuxcmd.Command, category string) config.Command {
+	description := cmd.Description
+	if description == "" {
+		description = "tmux command"
+	}
+	aliases := []string{}
+	if cmd.TakesArgs {
+		aliases = append(aliases, "args")
+	}
+	return config.Command{
+		Title:       cmd.Name,
+		Description: description,
+		Category:    category,
+		Aliases:     aliases,
+		Action:      "tmux",
+		Command:     cmd.Name,
+		Icon:        "▸",
+	}
+}
+
+func (m Model) tmuxMatchData(cmd config.Command) (tmuxcmd.Command, tmuxcmd.Invocation, bool) {
+	if cmd.Category == recentCategory {
+		invocation := tmuxcmd.Invocation{Name: cmd.Title, Args: strings.TrimSpace(strings.TrimPrefix(cmd.Command, cmd.Title))}
+		return m.findTmuxCommand(invocation.Name), invocation, true
+	}
+	return m.findTmuxCommand(cmd.Title), tmuxcmd.Invocation{Name: cmd.Title}, false
+}
+
+func (m Model) findTmuxCommand(name string) tmuxcmd.Command {
+	for _, cmd := range m.tmuxCommands {
+		if cmd.Name == name {
+			return cmd
+		}
+	}
+	return tmuxcmd.Command{Name: name, TakesArgs: true}
+}
+
 func (m Model) commandsForEmptyQuery() []config.Command {
 	if len(m.recentKeys) == 0 {
 		return m.commands
@@ -557,12 +893,50 @@ func (m Model) recentBoost(key string) int {
 	return 0
 }
 
+func (m Model) recentTmuxBoost(key string) int {
+	for i, invocation := range m.recentTmux {
+		if invocation.Key() == key {
+			boost := recentScoreBoost - i
+			if boost < 1 {
+				return 1
+			}
+			return boost
+		}
+	}
+	return 0
+}
+
+func (m Model) matchCount() int {
+	if m.listMode == listModeTmux {
+		return len(m.tmuxMatches())
+	}
+	return len(m.matches())
+}
+
 func (m *Model) moveToNextCategory() {
+	if m.listMode == listModeTmux {
+		matches := m.tmuxMatches()
+		categories := make([]fuzzy.Match, 0, len(matches))
+		for _, match := range matches {
+			categories = append(categories, match.Match)
+		}
+		m.cursor = nextCategoryIndex(categories, m.cursor)
+		return
+	}
 	matches := m.matches()
 	m.cursor = nextCategoryIndex(matches, m.cursor)
 }
 
 func (m *Model) moveToPreviousCategory() {
+	if m.listMode == listModeTmux {
+		matches := m.tmuxMatches()
+		categories := make([]fuzzy.Match, 0, len(matches))
+		for _, match := range matches {
+			categories = append(categories, match.Match)
+		}
+		m.cursor = previousCategoryIndex(categories, m.cursor)
+		return
+	}
 	matches := m.matches()
 	m.cursor = previousCategoryIndex(matches, m.cursor)
 }
@@ -619,14 +993,14 @@ func clampCursor(cursor int, length int) int {
 }
 
 func (m *Model) ensureCursorVisible() {
-	matches := m.matches()
-	if len(matches) == 0 {
+	count := m.matchCount()
+	if count == 0 {
 		m.cursor = 0
 		m.offset = 0
 		return
 	}
-	if m.cursor >= len(matches) {
-		m.cursor = len(matches) - 1
+	if m.cursor >= count {
+		m.cursor = count - 1
 	}
 	if m.cursor < 0 {
 		m.cursor = 0
@@ -634,7 +1008,7 @@ func (m *Model) ensureCursorVisible() {
 	if m.cursor < m.offset {
 		m.offset = m.cursor
 	}
-	for !m.commandCursorVisible(matches) && m.offset < m.cursor {
+	for !m.cursorVisible() && m.offset < m.cursor {
 		m.offset++
 	}
 	if m.offset < 0 {
@@ -643,11 +1017,43 @@ func (m *Model) ensureCursorVisible() {
 }
 
 func (m Model) commandLineBudget() int {
-	rows := m.contentHeight() - 6
+	rows := m.contentHeight() - 7
+	if !m.showToggleHint {
+		rows++
+	}
 	if rows < 1 {
 		return 1
 	}
 	return rows
+}
+
+func (m Model) renderModeHint() string {
+	current := "Commands"
+	if m.listMode == listModeTmux {
+		current = "tmux Commands"
+	}
+	return m.styles.muted.Render(fmt.Sprintf("Mode: %s · %s to toggle", current, displayKey(m.tmuxModeKey)))
+}
+
+func displayKey(key string) string {
+	parts := strings.Split(config.NormalizeKey(key), "+")
+	for i, part := range parts {
+		switch part {
+		case "ctrl":
+			parts[i] = "Ctrl"
+		case "alt":
+			parts[i] = "Alt"
+		case "shift":
+			parts[i] = "Shift"
+		default:
+			if len(part) == 1 {
+				parts[i] = strings.ToUpper(part)
+			} else if part != "" {
+				parts[i] = strings.ToUpper(part[:1]) + part[1:]
+			}
+		}
+	}
+	return strings.Join(parts, "-")
 }
 
 func (m Model) renderSearchBox() string {
@@ -668,6 +1074,9 @@ func (m Model) renderSearchBox() string {
 
 	promptStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.Glyph)).Background(lipgloss.Color(fill))
 	prompt := "❯ "
+	if m.listMode == listModeTmux {
+		prompt = "tmux ❯ "
+	}
 	prefix := promptStyle.Render(prompt)
 	inputBudget := contentWidth - lipgloss.Width(prompt) - lipgloss.Width(cursor)
 	if inputBudget < 1 {
@@ -723,6 +1132,13 @@ func (m Model) renderRecentDivider() string {
 	return m.styles.muted.Render(strings.Repeat("─", width))
 }
 
+func (m Model) cursorVisible() bool {
+	if m.listMode == listModeTmux {
+		return m.tmuxCursorVisible(m.tmuxMatches())
+	}
+	return m.commandCursorVisible(m.matches())
+}
+
 func (m Model) commandCursorVisible(matches []fuzzy.Match) bool {
 	if m.cursor < m.offset {
 		return false
@@ -758,6 +1174,40 @@ func (m Model) commandCursorVisible(matches []fuzzy.Match) bool {
 	return false
 }
 
+func (m Model) tmuxCursorVisible(matches []tmuxMatch) bool {
+	if m.cursor < m.offset {
+		return false
+	}
+	lineBudget := m.commandLineBudget()
+	linesUsed := 0
+	lastCategory := ""
+	showHeaders := strings.TrimSpace(m.query) == ""
+	for rowIndex := m.offset; rowIndex < len(matches); rowIndex++ {
+		cmd := matches[rowIndex].Match.Command
+		if showHeaders && cmd.Category != lastCategory {
+			if lastCategory == recentCategory {
+				if linesUsed+1 > lineBudget {
+					return false
+				}
+				linesUsed++
+			}
+			if linesUsed+1 > lineBudget {
+				return false
+			}
+			linesUsed++
+			lastCategory = cmd.Category
+		}
+		if linesUsed+1 > lineBudget {
+			return false
+		}
+		if rowIndex == m.cursor {
+			return true
+		}
+		linesUsed++
+	}
+	return false
+}
+
 func commandRowLines(config.Command) int {
 	return 1
 }
@@ -774,7 +1224,7 @@ func renderRow(match fuzzy.Match, s styles, selected bool, showGlyphs bool, show
 	}
 	line := renderRowPrefix(match, s, selected, showGlyphs)
 	if showDescription && cmd.Description != "" {
-		separator := " - "
+		separator := " • "
 		budget := width - lipgloss.Width(line) - lipgloss.Width(separator)
 		if budget > 0 {
 			line += descStyle.Render(separator + truncate(cmd.Description, budget))

@@ -26,6 +26,16 @@ func TestBuildTmuxAction(t *testing.T) {
 	}
 }
 
+func TestBuildTmuxCommand(t *testing.T) {
+	action := BuildTmuxCommand("split-window -h")
+	if action.Kind != KindTmux || action.Command != "tmux" {
+		t.Fatalf("unexpected action: %#v", action)
+	}
+	if len(action.Args) != 3 || action.Args[2] != "sleep 0.05; tmux split-window -h" {
+		t.Fatalf("unexpected args: %#v", action.Args)
+	}
+}
+
 func TestBuildShellAction(t *testing.T) {
 	action, err := Build(config.Command{Action: "shell", Command: "echo hi"}, config.DefaultUI(), testTheme)
 	if err != nil {

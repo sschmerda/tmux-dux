@@ -8,6 +8,7 @@ import (
 	"github.com/stefanschmerda/tmux-commander/internal/config"
 	"github.com/stefanschmerda/tmux-commander/internal/fuzzy"
 	"github.com/stefanschmerda/tmux-commander/internal/theme"
+	"github.com/stefanschmerda/tmux-commander/internal/tmuxcmd"
 )
 
 func TestNextCategoryIndexMovesToFirstCommandInNextCategory(t *testing.T) {
@@ -242,6 +243,185 @@ func TestPopupInternalCommandExitsPalette(t *testing.T) {
 	}
 	if cmd == nil {
 		t.Fatal("expected popup-style internal command to quit the palette")
+	}
+}
+
+func TestCtrlTTogglesTmuxCommandMode(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.tmuxCommands = []tmuxcmd.Command{{Name: "split-window", Usage: "[-h]", TakesArgs: true}}
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyCtrlT})
+	updated := next.(Model)
+	if updated.listMode != listModeTmux {
+		t.Fatalf("listMode = %v, want tmux", updated.listMode)
+	}
+	if len(updated.tmuxMatches()) != 1 {
+		t.Fatalf("tmux match count = %d, want 1", len(updated.tmuxMatches()))
+	}
+}
+
+func TestConfiguredKeyTogglesTmuxCommandMode(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.tmuxModeKey = "ctrl+y"
+	model.tmuxCommands = []tmuxcmd.Command{{Name: "split-window", Usage: "[-h]", TakesArgs: true}}
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyCtrlY})
+	updated := next.(Model)
+	if updated.listMode != listModeTmux {
+		t.Fatalf("listMode = %v, want tmux", updated.listMode)
+	}
+}
+
+func TestRenderModeHintShowsConfiguredKey(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.tmuxModeKey = "ctrl+y"
+
+	hint := model.renderModeHint()
+	if !strings.Contains(hint, "Mode: Commands") || !strings.Contains(hint, "Ctrl-Y to toggle") {
+		t.Fatalf("hint = %q", hint)
+	}
+}
+
+func TestViewCanHideToggleHint(t *testing.T) {
+	model := New(
+		[]config.Command{{Title: "Lazygit", Category: "Tools", Action: "popup", Command: "lazygit"}},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		nil,
+		"",
+		"",
+	)
+	model.width = 80
+	model.height = 24
+	model.showToggleHint = false
+
+	view := model.View()
+	if strings.Contains(view, "Mode:") {
+		t.Fatalf("view included toggle hint: %q", view)
+	}
+}
+
+func TestSelectingTmuxCommandWithArgsOpensArgumentInput(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.listMode = listModeTmux
+	model.tmuxCommands = []tmuxcmd.Command{{Name: "split-window", Usage: "[-h]", TakesArgs: true}}
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.mode != modeTmuxArgs {
+		t.Fatalf("mode = %v, want tmux args", updated.mode)
+	}
+	if updated.argCommand.Name != "split-window" {
+		t.Fatalf("arg command = %#v", updated.argCommand)
+	}
+}
+
+func TestTmuxArgumentInputReturnsInvocation(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.mode = modeTmuxArgs
+	model.argCommand = tmuxcmd.Command{Name: "split-window", TakesArgs: true}
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("-h")})
+	updated := next.(Model)
+	next, cmd := updated.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated = next.(Model)
+	if updated.selectedTmux == nil {
+		t.Fatal("expected tmux invocation")
+	}
+	if updated.selectedTmux.CommandLine() != "split-window -h" {
+		t.Fatalf("invocation = %#v", updated.selectedTmux)
+	}
+	if cmd == nil {
+		t.Fatal("expected argument input to quit the palette")
+	}
+}
+
+func TestTmuxArgumentViewShowsArgumentHelp(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.mode = modeTmuxArgs
+	model.width = 100
+	model.height = 30
+	model.argCommand = tmuxcmd.Command{
+		Name:        "split-window",
+		Usage:       "[-h] [-v]",
+		Description: "Split a pane",
+		ArgHelp:     []string{"-h: split left/right", "-v: split top/bottom"},
+		TakesArgs:   true,
+	}
+
+	view := model.viewTmuxArgs()
+	if !strings.Contains(view, "-h: split left/right") || !strings.Contains(view, "args") {
+		t.Fatalf("view did not include argument help and prompt: %q", view)
+	}
+	descriptionIndex := strings.Index(view, "Split a pane")
+	usageIndex := strings.Index(view, "[-h] [-v]")
+	helpIndex := strings.Index(view, "-h: split left/right")
+	promptIndex := strings.Index(view, "args")
+	if descriptionIndex < 0 || usageIndex < 0 || helpIndex < 0 || promptIndex < 0 {
+		t.Fatalf("view missing expected sections: %q", view)
+	}
+	if !(descriptionIndex < usageIndex && usageIndex < helpIndex && helpIndex < promptIndex) {
+		t.Fatalf("unexpected section order: description=%d usage=%d help=%d prompt=%d", descriptionIndex, usageIndex, helpIndex, promptIndex)
+	}
+}
+
+func TestRecentTmuxCommandsAppearBeforeCatalog(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.listMode = listModeTmux
+	model.tmuxCommands = []tmuxcmd.Command{{Name: "split-window", Usage: "[-h]", TakesArgs: true}}
+	model.recentTmux = []tmuxcmd.Invocation{{Name: "split-window", Args: "-h"}}
+
+	matches := model.tmuxMatches()
+	if len(matches) != 2 {
+		t.Fatalf("match count = %d, want 2", len(matches))
+	}
+	if !matches[0].Recent || matches[0].Invocation.CommandLine() != "split-window -h" {
+		t.Fatalf("first match = %#v", matches[0])
+	}
+	if matches[1].Recent {
+		t.Fatalf("second match unexpectedly recent: %#v", matches[1])
+	}
+}
+
+func TestTmuxCommandRowsUseDescriptionAndArgsChip(t *testing.T) {
+	cmd := tmuxCommandToConfig(tmuxcmd.Command{
+		Name:        "split-window",
+		Usage:       "[-h] [-v]",
+		Description: "Split a pane",
+		TakesArgs:   true,
+	}, tmuxCommandCategory)
+
+	if cmd.Description != "Split a pane" {
+		t.Fatalf("description = %q, want short description", cmd.Description)
+	}
+	if strings.Contains(cmd.Description, "[-h]") {
+		t.Fatalf("description included usage: %q", cmd.Description)
+	}
+	if len(cmd.Aliases) != 1 || cmd.Aliases[0] != "args" {
+		t.Fatalf("aliases = %#v, want args chip", cmd.Aliases)
+	}
+}
+
+func TestTmuxCommandViewCanHideDescriptions(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 100
+	model.height = 24
+	model.listMode = listModeTmux
+	model.tmuxDescription = false
+	model.tmuxCommands = []tmuxcmd.Command{{
+		Name:        "split-window",
+		Description: "Split a pane",
+		TakesArgs:   true,
+	}}
+
+	view := model.viewTmuxCommands()
+	if strings.Contains(view, "Split a pane") {
+		t.Fatalf("view included tmux description: %q", view)
+	}
+	if !strings.Contains(view, "split-window") {
+		t.Fatalf("view did not include command name: %q", view)
 	}
 }
 

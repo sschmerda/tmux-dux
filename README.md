@@ -57,8 +57,12 @@ border = true
 theme = "shades-of-purple"
 glyphs = true
 show_description = true
+show_toggle_hint = true
+tmux_description = true
 recent_commands = true
 recent_limit = 10
+tmux_recent_limit = 10
+tmux_mode_key = "ctrl+t"
 
 [[commands]]
 title = "Lazygit"
@@ -107,8 +111,12 @@ The commander popup is launched without a native tmux border and draws its own t
 | `theme` | `"shades-of-purple"` | Built-in theme name, or `"custom"` to use `[custom_theme]`. |
 | `glyphs` | `true` | Enables command glyphs from `[[commands]].icon`. |
 | `show_description` | `true` | Shows command descriptions next to command titles. Set to `false` for a denser command list. |
+| `show_toggle_hint` | `true` | Shows the mode line below the search field, including the configured tmux-command toggle key. |
+| `tmux_description` | `true` | Shows short command descriptions in tmux-command mode. Set to `false` for a denser tmux command list. |
 | `recent_commands` | `true` | Enables the recent-command section and recency boost while filtering. |
 | `recent_limit` | `10` | Maximum number of recent commands to keep in state and show in the palette. Set to `0` to disable recents. |
+| `tmux_recent_limit` | `10` | Maximum number of recent tmux-command mode entries to keep in state and show in tmux-command mode. Set to `0` to disable tmux-command recents. |
+| `tmux_mode_key` | `"ctrl+t"` | Key used to toggle between configured commands and tmux-command mode. The active key is shown in the palette hint. |
 
 `[[commands]]` fields:
 
@@ -234,6 +242,8 @@ Commands are identified by `action:command`, not by title. Reusing an existing c
 
 With an empty search query, recent commands are shown first under a `Recent` heading, followed by a subtle divider and the normal categorized command list. Recent commands still appear again in their normal category. While filtering, all commands are searched normally, but recent commands receive a small score boost.
 
+The same history file also stores recent commands launched from tmux-command mode under a separate `[[tmux_commands]]` section. These entries keep the command arguments, so rerunning a recent `split-window -h` entry does not require retyping `-h`. The tmux-command recent list is capped by `[ui].tmux_recent_limit`, separately from `[ui].recent_limit`.
+
 ## Actions
 
 Each command must define an `action` and a `command`.
@@ -276,8 +286,11 @@ Built-in internal commands manage `tmux-commander` itself. In-app commands such 
 - Type to filter commands.
 - Use `Up` / `Down` or `Ctrl-P` / `Ctrl-N` to move.
 - Use `Tab` / `Shift-Tab` to jump between command categories.
+- Press the configured toggle key, `Ctrl-T` by default, to switch between the configured command palette and tmux-command mode. The active key is shown below the search field.
 - Press `Enter` to select.
 - Press `Esc` or `Ctrl-C` to cancel.
+
+In tmux-command mode, the palette fuzzy-searches tmux command names and shows the command usage next to each result when tmux exposes it. Selecting an argument-capable tmux command opens an argument input view inside commander. Press `Enter` from that view to run `tmux <command> <arguments>`, or `Esc` to return to the tmux command list without losing the previous selection.
 
 In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list at the previous position.
 
