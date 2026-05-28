@@ -16,13 +16,22 @@ import (
 	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
 )
 
-func main() {
-	if len(os.Args) > 1 && os.Args[1] == "themes" {
-		fmt.Println(strings.Join(theme.ConfigNames(), "\n"))
-		return
-	}
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
+func main() {
 	if len(os.Args) > 1 {
+		if os.Args[1] == "themes" {
+			fmt.Println(strings.Join(theme.ConfigNames(), "\n"))
+			return
+		}
+		if os.Args[1] == "version" || os.Args[1] == "--version" || os.Args[1] == "-v" {
+			fmt.Printf("tmux-commander %s (%s, %s)\n", version, commit, date)
+			return
+		}
 		cfg, _, err := config.Load()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "tmux-commander: load config: %v\n", err)

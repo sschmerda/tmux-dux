@@ -4,6 +4,44 @@
 
 ## Install
 
+With TPM:
+
+```tmux
+set -g @plugin 'sschmerda/tmux-commander'
+set -g @tmux-commander-key 'Space'
+```
+
+Press `prefix` + `I` to install. The TPM plugin downloads the latest release binary into the plugin directory. `@tmux-commander-key` is optional; no key is bound unless you set it explicitly. The example above binds `prefix` + `Space` to `tmux-commander popup`.
+
+For a global binding that does not require the tmux prefix, bind it manually after the TPM plugin declaration:
+
+```tmux
+bind-key -n C-Space run-shell '"${TMUX_COMMANDER_BIN:-tmux-commander}" popup'
+```
+
+With the release installer:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sschmerda/tmux-commander/main/scripts/install.sh | sh
+```
+
+Install a specific release:
+
+```sh
+TMUX_COMMANDER_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/sschmerda/tmux-commander/main/scripts/install.sh | sh
+```
+
+The installer supports macOS and Linux on `amd64` and `arm64`, matching the precompiled GitHub release archives. It installs to `~/.local/bin` by default. Override that with `TMUX_COMMANDER_INSTALL_DIR`.
+
+Verify a downloaded release archive with GitHub artifact attestations:
+
+```sh
+gh attestation verify tmux-commander_linux_arm64.tar.gz \
+  --repo sschmerda/tmux-commander
+```
+
+The installer verifies SHA256 checksums automatically. Artifact attestation verification additionally proves that a release archive was produced by this repository's GitHub Actions release workflow.
+
 Build from source:
 
 ```sh
@@ -20,7 +58,7 @@ The only runtime dependency is `tmux` itself. Optional commands such as `lazygit
 
 ## tmux Binding
 
-Recommended binding. This lets `tmux-commander` read `[ui].width` and `[ui].height` from TOML:
+Recommended binding when installing outside TPM. This lets `tmux-commander` read `[ui].width` and `[ui].height` from TOML:
 
 ```tmux
 bind -n C-Space run-shell "tmux-commander popup"
@@ -361,7 +399,7 @@ The deliberate differences in `tmux-commander` are:
 - A smaller first surface area focused on tmux commands, shell commands, and popup commands.
 - Package boundaries for config, fuzzy matching, action dispatch, palette UI, and tmux helpers.
 
-`tmux-palette` currently has broader customization features such as custom palettes, theme selection, JSON-powered plugin sources, and TPM-oriented installation. `tmux-commander` starts with less surface area and prioritizes low-friction native binary installation.
+`tmux-palette` currently has broader customization features such as custom palettes, theme selection, and JSON-powered plugin sources. `tmux-commander` starts with less surface area and prioritizes low-friction native binary installation, including TPM installation backed by precompiled release binaries.
 
 ## Development
 
@@ -369,6 +407,7 @@ The deliberate differences in `tmux-commander` are:
 go test ./...
 go run ./cmd/tmux-commander
 go run ./cmd/tmux-commander themes
+go run ./cmd/tmux-commander version
 go build -o bin/tmux-commander ./cmd/tmux-commander
 ```
 
@@ -380,7 +419,29 @@ Run inside tmux for a realistic manual test:
 
 ## Release Builds
 
-Build a local binary:
+Release builds are handled by GoReleaser and GitHub Actions. Pushing a `v*` tag runs tests, builds Linux/macOS `amd64` and `arm64` archives, generates `checksums.txt`, publishes a GitHub release, and creates artifact attestations for the release archives.
+
+Create a release:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Run a local snapshot with GoReleaser:
+
+```sh
+goreleaser release --snapshot --clean
+```
+
+Verify a published release archive:
+
+```sh
+gh attestation verify tmux-commander_linux_arm64.tar.gz \
+  --repo sschmerda/tmux-commander
+```
+
+Build a local binary without GoReleaser:
 
 ```sh
 go build -trimpath -ldflags="-s -w" -o bin/tmux-commander ./cmd/tmux-commander
@@ -392,3 +453,5 @@ Example cross-compile commands:
 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/tmux-commander_darwin_arm64 ./cmd/tmux-commander
 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/tmux-commander_linux_amd64 ./cmd/tmux-commander
 ```
+
+Homebrew can be added later by extending `.goreleaser.yaml` with a `brews` publisher that writes to a tap repository.
