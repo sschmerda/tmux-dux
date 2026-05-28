@@ -144,6 +144,7 @@ popup_height = "85%"
 	if len(cfg.Commands) != 7 {
 		t.Fatalf("command count = %d, want 7", len(cfg.Commands))
 	}
+	assertSettingsLast(t, cfg.Commands)
 	for _, internal := range []string{InternalThemePreview, InternalClearRecent, InternalConfigPath, InternalControls, InternalEditConfig, InternalReloadConfig} {
 		found := false
 		for _, cmd := range cfg.Commands {
@@ -215,6 +216,44 @@ action = "popup"
 	}
 	if _, err := LoadFile(path); err == nil {
 		t.Fatal("LoadFile returned nil error")
+	}
+}
+
+func TestLoadFileRejectsReservedSettingsCategory(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[[commands]]
+title = "Custom Settings"
+category = "Settings tmux-commander"
+action = "shell"
+command = "echo no"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	_, err := LoadFile(path)
+	if err == nil {
+		t.Fatal("LoadFile returned nil error for reserved settings category")
+	}
+	if !strings.Contains(err.Error(), "reserved category") {
+		t.Fatalf("error = %q, want reserved category guidance", err.Error())
+	}
+}
+
+func TestLoadFileRejectsReservedSettingsCategoryCaseInsensitive(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[[commands]]
+title = "Custom Settings"
+category = "settings tmux-commander"
+action = "shell"
+command = "echo no"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := LoadFile(path); err == nil {
+		t.Fatal("LoadFile returned nil error for reserved settings category")
 	}
 }
 
@@ -312,6 +351,36 @@ func TestDefaultCommandsContainExpectedInitialSet(t *testing.T) {
 	for title, found := range want {
 		if !found {
 			t.Fatalf("missing default command %q", title)
+		}
+	}
+}
+
+func TestSettingsCommandsAreAlwaysLast(t *testing.T) {
+	commands := ensureInternalCommands([]Command{
+		{Title: "Preview Themes", Internal: InternalThemePreview},
+		{Title: "Lazygit", Category: "Tools", Action: "popup", Command: "lazygit"},
+		{Title: "Reload Config", Internal: InternalReloadConfig},
+		{Title: "Split", Category: "Panes", Action: "tmux", Command: "split-window -h"},
+	})
+
+	assertSettingsLast(t, commands)
+}
+
+func assertSettingsLast(t *testing.T, commands []Command) {
+	t.Helper()
+	settingsStart := len(commands) - len(SettingsCommands())
+	if settingsStart < 0 {
+		t.Fatalf("command count = %d, want at least settings count", len(commands))
+	}
+	for i, cmd := range commands[:settingsStart] {
+		if cmd.Internal != "" {
+			t.Fatalf("non-settings prefix command %d has internal %q", i, cmd.Internal)
+		}
+	}
+	for i, want := range SettingsCommands() {
+		got := commands[settingsStart+i]
+		if got.Internal != want.Internal {
+			t.Fatalf("settings command %d = %q, want %q", i, got.Internal, want.Internal)
 		}
 	}
 }

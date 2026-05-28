@@ -288,6 +288,9 @@ func validateCommands(commands []Command) error {
 		if cmd.Internal != "" {
 			continue
 		}
+		if strings.EqualFold(strings.TrimSpace(cmd.Category), settingsCategory) {
+			return fmt.Errorf("command %q uses reserved category %q", cmd.Title, settingsCategory)
+		}
 		cmd.Action = strings.ToLower(strings.TrimSpace(cmd.Action))
 		if cmd.Action == "" {
 			return fmt.Errorf("command %q must define action", cmd.Title)
@@ -305,16 +308,26 @@ func validateCommands(commands []Command) error {
 }
 
 func ensureInternalCommands(commands []Command) []Command {
-	existing := map[string]bool{}
+	userCommands := make([]Command, 0, len(commands))
 	for _, cmd := range commands {
-		if cmd.Internal != "" {
-			existing[cmd.Internal] = true
+		if isSettingsInternal(cmd.Internal) {
+			continue
 		}
+		userCommands = append(userCommands, cmd)
+	}
+	commands = userCommands
+	commands = append(commands, SettingsCommands()...)
+	return commands
+}
+
+func isSettingsInternal(internal string) bool {
+	if internal == "" {
+		return false
 	}
 	for _, cmd := range SettingsCommands() {
-		if !existing[cmd.Internal] {
-			commands = append(commands, cmd)
+		if cmd.Internal == internal {
+			return true
 		}
 	}
-	return commands
+	return false
 }
