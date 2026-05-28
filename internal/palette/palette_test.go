@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/stefanschmerda/tmux-commander/internal/config"
-	"github.com/stefanschmerda/tmux-commander/internal/fuzzy"
-	"github.com/stefanschmerda/tmux-commander/internal/theme"
-	"github.com/stefanschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-commander/internal/config"
+	"github.com/sschmerda/tmux-commander/internal/fuzzy"
+	"github.com/sschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
 )
 
 func TestNextCategoryIndexMovesToFirstCommandInNextCategory(t *testing.T) {

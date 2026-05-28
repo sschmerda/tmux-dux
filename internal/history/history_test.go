@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stefanschmerda/tmux-commander/internal/config"
-	"github.com/stefanschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-commander/internal/config"
+	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
 )
 
 func TestPathUsesXDGStateHome(t *testing.T) {

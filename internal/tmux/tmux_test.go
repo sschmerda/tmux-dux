@@ -2,7 +2,7 @@ package tmux
 
 import "testing"
 
-import "github.com/stefanschmerda/tmux-commander/internal/theme"
+import "github.com/sschmerda/tmux-commander/internal/theme"
 
 func TestPopupCommand(t *testing.T) {
 	got := PopupCommand("tmux-commander", "75%", "70%")

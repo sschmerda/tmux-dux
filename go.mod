@@ -1,4 +1,4 @@
-module github.com/stefanschmerda/tmux-commander
+module github.com/sschmerda/tmux-commander
 
 go 1.24.5
 

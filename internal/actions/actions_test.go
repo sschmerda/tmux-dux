@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stefanschmerda/tmux-commander/internal/config"
-	"github.com/stefanschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-commander/internal/config"
+	"github.com/sschmerda/tmux-commander/internal/theme"
 )
 
 var testTheme = theme.Resolve("shades-of-purple")

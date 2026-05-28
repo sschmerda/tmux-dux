@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/stefanschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-commander/internal/theme"
 )
 
 func Installed() bool {

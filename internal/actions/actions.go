@@ -7,9 +7,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/stefanschmerda/tmux-commander/internal/config"
-	"github.com/stefanschmerda/tmux-commander/internal/theme"
-	"github.com/stefanschmerda/tmux-commander/internal/tmux"
+	"github.com/sschmerda/tmux-commander/internal/config"
+	"github.com/sschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-commander/internal/tmux"
 )
 
 type Kind string

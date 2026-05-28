@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stefanschmerda/tmux-commander/internal/actions"
-	"github.com/stefanschmerda/tmux-commander/internal/config"
-	"github.com/stefanschmerda/tmux-commander/internal/history"
-	"github.com/stefanschmerda/tmux-commander/internal/palette"
-	"github.com/stefanschmerda/tmux-commander/internal/theme"
-	"github.com/stefanschmerda/tmux-commander/internal/tmux"
-	"github.com/stefanschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-commander/internal/actions"
+	"github.com/sschmerda/tmux-commander/internal/config"
+	"github.com/sschmerda/tmux-commander/internal/history"
+	"github.com/sschmerda/tmux-commander/internal/palette"
+	"github.com/sschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-commander/internal/tmux"
+	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
 )
 
 func main() {

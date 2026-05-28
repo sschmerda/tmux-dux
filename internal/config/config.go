@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/stefanschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-commander/internal/theme"
 )
 
 type UI struct {

@@ -7,7 +7,7 @@
 Build from source:
 
 ```sh
-go install github.com/stefanschmerda/tmux-commander/cmd/tmux-commander@latest
+go install github.com/sschmerda/tmux-commander/cmd/tmux-commander@latest
 ```
 
 Local development build:
