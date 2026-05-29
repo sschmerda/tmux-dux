@@ -163,6 +163,86 @@ popup_height = "85%"
 	}
 }
 
+func TestLoadFileUsesSiblingCommandsFile(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.toml")
+	commandsPath := filepath.Join(dir, "commands.toml")
+	configInput := `
+[ui]
+width = "60%"
+
+[[commands]]
+title = "Inline"
+action = "tmux"
+command = "display-panes"
+`
+	commandsInput := `
+[[commands]]
+title = "External"
+action = "tmux"
+command = "split-window -h"
+`
+	if err := os.WriteFile(configPath, []byte(configInput), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if err := os.WriteFile(commandsPath, []byte(commandsInput), 0o600); err != nil {
+		t.Fatalf("write commands: %v", err)
+	}
+
+	cfg, err := LoadFile(configPath)
+	if err != nil {
+		t.Fatalf("LoadFile returned error: %v", err)
+	}
+	if cfg.UI.Width != "60%" {
+		t.Fatalf("width = %q, want 60%%", cfg.UI.Width)
+	}
+	if cfg.Commands[0].Title != "External" {
+		t.Fatalf("first command = %#v, want commands.toml command", cfg.Commands[0])
+	}
+}
+
+func TestLoadFileCanUseCommandsFileWithoutConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.toml")
+	commandsPath := filepath.Join(dir, "commands.toml")
+	commandsInput := `
+[[commands]]
+title = "External"
+action = "tmux"
+command = "split-window -h"
+`
+	if err := os.WriteFile(commandsPath, []byte(commandsInput), 0o600); err != nil {
+		t.Fatalf("write commands: %v", err)
+	}
+
+	cfg, err := LoadFile(configPath)
+	if err != nil {
+		t.Fatalf("LoadFile returned error: %v", err)
+	}
+	if cfg.UI.Width != "40%" {
+		t.Fatalf("width = %q, want default 40%%", cfg.UI.Width)
+	}
+	if cfg.Commands[0].Title != "External" {
+		t.Fatalf("first command = %#v, want commands.toml command", cfg.Commands[0])
+	}
+}
+
+func TestLoadFileRejectsSettingsInCommandsFile(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.toml")
+	commandsPath := filepath.Join(dir, "commands.toml")
+	if err := os.WriteFile(configPath, []byte("[ui]\nwidth = \"60%\"\n"), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if err := os.WriteFile(commandsPath, []byte("[ui]\nwidth = \"70%\"\n"), 0o600); err != nil {
+		t.Fatalf("write commands: %v", err)
+	}
+
+	if _, err := LoadFile(configPath); err == nil {
+		t.Fatal("LoadFile returned nil error")
+	}
+}
+
 func TestLoadFileRejectsUnsupportedPrompt(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.toml")
 	input := `

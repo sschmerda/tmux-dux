@@ -112,6 +112,10 @@ func Path() (string, error) {
 	return filepath.Join(base, "tmux-commander", "config.toml"), nil
 }
 
+func CommandsPath(configPath string) string {
+	return filepath.Join(filepath.Dir(configPath), "commands.toml")
+}
+
 func Load() (Config, string, error) {
 	path, err := Path()
 	if err != nil {
@@ -124,7 +128,11 @@ func Load() (Config, string, error) {
 func LoadFile(path string) (Config, error) {
 	if _, err := os.Stat(path); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return DefaultConfig(), nil
+			cfg := DefaultConfig()
+			if err := loadCommandsFileIfExists(&cfg, CommandsPath(path)); err != nil {
+				return Config{}, err
+			}
+			return cfg, nil
 		}
 		return Config{}, err
 	}
@@ -203,6 +211,9 @@ func LoadFile(path string) (Config, error) {
 		cfg.UI.TmuxRecentLimit = *raw.UI.TmuxRecentLimit
 	}
 	applyKeys(&cfg.Keys, raw.Keys)
+	if err := loadCommandsFileIfExists(&cfg, CommandsPath(path)); err != nil {
+		return Config{}, err
+	}
 	if cfg.UI.RecentLimit < 0 {
 		return Config{}, errors.New("ui.recent_limit must be >= 0")
 	}
@@ -217,6 +228,41 @@ func LoadFile(path string) (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+func loadCommandsFileIfExists(cfg *Config, path string) error {
+	if _, err := os.Stat(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	type rawCommands struct {
+		Commands []Command `toml:"commands"`
+	}
+	var raw rawCommands
+	meta, err := toml.DecodeFile(path, &raw)
+	if err != nil {
+		return err
+	}
+	if err := rejectCommandsFileFields(meta); err != nil {
+		return err
+	}
+	cfg.Commands = raw.Commands
+	return nil
+}
+
+func rejectCommandsFileFields(meta toml.MetaData) error {
+	for _, key := range meta.Undecoded() {
+		if len(key) == 0 {
+			continue
+		}
+		switch key[0] {
+		case "ui", "keys", "custom_theme":
+			return fmt.Errorf("commands.toml may only define [[commands]], found [%s]", key[0])
+		}
+	}
+	return nil
 }
 
 func NormalizeKey(key string) string {

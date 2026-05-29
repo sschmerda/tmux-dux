@@ -83,7 +83,16 @@ Configuration is TOML and is loaded from:
 1. `$XDG_CONFIG_HOME/tmux-commander/config.toml`
 2. `~/.config/tmux-commander/config.toml`
 
-If no config file exists, built-in defaults are used.
+Command definitions may either live inline in `config.toml` or in a sibling file:
+
+1. `$XDG_CONFIG_HOME/tmux-commander/commands.toml`
+2. `~/.config/tmux-commander/commands.toml`
+
+If `commands.toml` exists, its `[[commands]]` replace any inline `[[commands]]` from `config.toml`. This keeps app settings small while allowing long command catalogs. `commands.toml` may only define `[[commands]]`; keep `[ui]`, `[keys]`, and `[custom_theme]` in `config.toml`.
+
+If no config file exists, built-in defaults are used. If no command definitions exist, built-in commands are used.
+
+`config.toml`:
 
 ```toml
 [ui]
@@ -111,7 +120,11 @@ half_page_up = "ctrl+u"
 half_page_down = "ctrl+d"
 next_category = "tab"
 previous_category = "shift+tab"
+```
 
+`commands.toml`:
+
+```toml
 [[commands]]
 title = "Lazygit"
 description = "Open lazygit in a popup"
