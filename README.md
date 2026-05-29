@@ -335,7 +335,7 @@ Each command must define an `action` and a `command`.
 
 User-defined actions are terminal handoffs. Selecting a `tmux`, `shell`, `popup`, or `current_shell` command exits the commander first, then dispatches the command. This keeps tmux prompts and interactive terminal programs from competing with the Bubble Tea input loop.
 
-`action = "tmux"` runs `tmux <command>` after the palette exits:
+`action = "tmux"` runs `tmux <command>` after the palette exits. The `command` value should omit the leading `tmux`.
 
 ```toml
 action = "tmux"
@@ -352,23 +352,32 @@ prompt = "session_name"
 
 `{{input}}` inserts a shell-quoted value, which is the right default for names and paths. `{{raw_input}}` inserts the typed value without quoting for advanced command templates.
 
-`action = "shell"` runs the command through the user's shell after the palette exits:
+Built-in prompt names:
+
+| Prompt | Use for |
+| --- | --- |
+| `session_name` | New, rename, or switch-session commands. |
+| `window_name` | New or rename-window commands. |
+| `target_index` | Commands that target a tmux index, such as moving a window. |
+| `file_path` | Save/load commands and commands that need a filesystem path. |
+| `command` | Free-form tmux or shell command input. |
+| `search_query` | Search commands such as `find-window`. |
+
+`action = "shell"` runs the command through the user's shell after the palette exits. Use it for quick side effects that do not need visible output, such as copying text to a tmux buffer or opening a URL. Avoid it for commands that print output you need to read, because they run in the shell context left by the commander popup.
 
 ```toml
 action = "shell"
 command = "open https://github.com"
 ```
 
-`action = "current_shell"` sends the command to the active tmux pane and presses Enter after the palette exits:
+`action = "current_shell"` sends the command text to the active tmux pane and presses Enter after the palette exits. Use it when you want output to stay in the pane's normal shell history and scrollback.
 
 ```toml
 action = "current_shell"
 command = "git status"
 ```
 
-Use `current_shell` when you want command output to remain in the pane's normal shell history and scrollback. Use `shell` for quick side effects that do not need visible output.
-
-`action = "popup"` opens another tmux popup after the palette exits:
+`action = "popup"` opens another tmux popup after the palette exits and runs the command inside it. Use it for interactive terminal programs, fullscreen TUIs, or commands with output you want to read without writing into the active pane.
 
 ```toml
 action = "popup"
