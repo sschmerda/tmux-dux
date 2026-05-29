@@ -195,8 +195,14 @@ func argumentHelp(cmd Command) []string {
 		return []string{"-d: do not select the new window", "-P: print information about the new window", "-F format: output format for -P", "-n window-name: name for the new window", "-s src-pane: pane to break out", "-t dst-window: destination window"}
 	case "capture-pane":
 		return []string{"-p: print captured text instead of storing it", "-b buffer-name: store capture in a named buffer", "-S start-line: first line to capture", "-E end-line: last line to capture", "-t target-pane: pane to capture"}
-	case "choose-buffer", "choose-client", "choose-tree", "customize-mode":
-		return []string{"-Z: zoom while chooser is active", "-f filter: initial filter expression", "-F format: format each item", "-K key-format: format shortcut keys", "-O sort-order: initial sort order", "-t target-pane: target pane for chooser actions", "template: command template run for the selected item"}
+	case "choose-buffer":
+		return []string{"-N: start without preview", "-r: reverse sort order", "-y: skip confirmation prompts", "-Z: zoom while chooser is active", "-f filter: initial filter expression", "-F format: format each buffer row", "-K key-format: format shortcut keys", "-O sort-order: sort by time, name, or size", "-t target-pane: pane where chooser opens", "template: command run with %% replaced by the selected buffer name"}
+	case "choose-client":
+		return []string{"-N: start without preview", "-r: reverse sort order", "-y: skip confirmation prompts", "-Z: zoom while chooser is active", "-f filter: initial filter expression", "-F format: format each client row", "-K key-format: format shortcut keys", "-O sort-order: sort by name, size, creation, or activity", "-t target-pane: pane where chooser opens", "template: command run with %% replaced by the selected client name"}
+	case "choose-tree":
+		return []string{"-G: include all sessions in session groups", "-N: start without preview", "-r: reverse sort order", "-s: start with sessions collapsed", "-w: start with windows collapsed", "-y: skip confirmation prompts", "-Z: zoom while chooser is active", "-f filter: initial filter expression", "-F format: format each session/window/pane row", "-K key-format: format shortcut keys", "-O sort-order: sort by index, name, or activity time", "-t target-pane: pane where chooser opens", "template: command run with %% or %1 replaced by the selected session, window, or pane target"}
+	case "customize-mode":
+		return []string{"-N: start without preview", "-Z: zoom while customize mode is active", "-f filter: initial filter expression", "-F format: format each option row", "-t target-pane: pane where customize mode opens", "template: command run for the selected option"}
 	case "clear-history":
 		return []string{"-H: also remove hyperlinks", "-t target-pane: pane whose history should be cleared"}
 	case "clear-prompt-history", "show-prompt-history":
@@ -239,8 +245,20 @@ func argumentHelp(cmd Command) []string {
 		return []string{"-t target-session/window: session or window target", "-a: choose next/previous window with an alert when supported"}
 	case "link-window", "move-window":
 		return []string{"-a: place after destination", "-b: place before destination", "-d: do not select linked/moved window", "-k: kill destination if it exists", "-r: renumber windows when supported", "-s src-window: source window", "-t dst-window: destination window"}
-	case "list-buffers", "list-clients", "list-commands", "list-keys", "list-panes", "list-sessions", "list-windows":
-		return []string{"-F format: output format", "-f filter: filter expression", "-t target: restrict to target when supported", "-a: list all items when supported"}
+	case "list-buffers":
+		return []string{"-F format: output format", "-f filter: filter expression"}
+	case "list-clients":
+		return []string{"-F format: output format", "-f filter: filter expression", "-t target-session: list clients attached to a session"}
+	case "list-commands":
+		return []string{"-F format: output format", "command: optional command name to describe"}
+	case "list-keys":
+		return []string{"-1: list only the first matching key", "-a: list all key tables", "-N: include key notes", "-P prefix-string: prefix each line", "-T key-table: key table to list", "key: optional key to list"}
+	case "list-panes":
+		return []string{"-a: list panes in all sessions", "-s: list panes in the target session", "-F format: output format", "-f filter: filter expression", "-t target: pane, window, or session to list"}
+	case "list-sessions":
+		return []string{"-F format: output format", "-f filter: filter expression"}
+	case "list-windows":
+		return []string{"-a: list windows in all sessions", "-F format: output format", "-f filter: filter expression", "-t target-session: session whose windows should be listed"}
 	case "load-buffer":
 		return []string{"-w: also send buffer to clipboard", "-b buffer-name: target buffer name", "-t target-client: client for clipboard", "path: file to load, or - for stdin"}
 	case "lock-client", "lock-session", "suspend-client":

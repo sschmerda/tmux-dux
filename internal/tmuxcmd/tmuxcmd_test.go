@@ -1,6 +1,9 @@
 package tmuxcmd
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestInvocationCommandLineIncludesArgs(t *testing.T) {
 	invocation := Invocation{Name: "split-window", Args: "-h"}
@@ -49,6 +52,36 @@ func TestDefaultsIncludeArgumentHelpForArgumentCommands(t *testing.T) {
 			t.Fatalf("%s has no argument help", cmd.Name)
 		}
 	}
+}
+
+func TestChooseTreeArgumentHelpExplainsCollapsedFlags(t *testing.T) {
+	var chooseTree Command
+	for _, cmd := range Defaults() {
+		if cmd.Name == "choose-tree" {
+			chooseTree = cmd
+			break
+		}
+	}
+	if chooseTree.Name == "" {
+		t.Fatal("choose-tree not found")
+	}
+	assertHelpContains(t, chooseTree.ArgHelp, "-s: start with sessions collapsed")
+	assertHelpContains(t, chooseTree.ArgHelp, "-w: start with windows collapsed")
+	assertHelpContains(t, chooseTree.ArgHelp, "%% or %1")
+}
+
+func TestListPanesArgumentHelpExplainsSessionFlag(t *testing.T) {
+	var listPanes Command
+	for _, cmd := range Defaults() {
+		if cmd.Name == "list-panes" {
+			listPanes = cmd
+			break
+		}
+	}
+	if listPanes.Name == "" {
+		t.Fatal("list-panes not found")
+	}
+	assertHelpContains(t, listPanes.ArgHelp, "-s: list panes in the target session")
 }
 
 func TestDefaultsCoverTmux36aCommands(t *testing.T) {
@@ -153,4 +186,14 @@ func TestDefaultsCoverTmux36aCommands(t *testing.T) {
 			t.Fatalf("missing tmux command %q", name)
 		}
 	}
+}
+
+func assertHelpContains(t *testing.T, help []string, want string) {
+	t.Helper()
+	for _, line := range help {
+		if strings.Contains(line, want) {
+			return
+		}
+	}
+	t.Fatalf("help does not contain %q: %#v", want, help)
 }
