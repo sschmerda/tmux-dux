@@ -191,6 +191,10 @@ func (f File) RecentKeys(limit int) []string {
 	keys := make([]string, 0, len(f.Entries))
 	for _, entry := range f.Entries {
 		keys = append(keys, entry.Key)
+		titleKey := config.CommandTitleKey(config.Command{Title: entry.Title, Action: entry.Action})
+		if titleKey != "" {
+			keys = append(keys, titleKey)
+		}
 	}
 	return keys
 }

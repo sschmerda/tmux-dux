@@ -268,6 +268,10 @@ func CommandKey(cmd Command) string {
 	return strings.ToLower(strings.TrimSpace(cmd.Action)) + ":" + strings.TrimSpace(cmd.Command)
 }
 
+func CommandTitleKey(cmd Command) string {
+	return strings.ToLower(strings.TrimSpace(cmd.Action)) + ":title:" + strings.ToLower(strings.TrimSpace(cmd.Title))
+}
+
 func rejectDeprecatedFields(meta toml.MetaData) error {
 	for _, key := range meta.Undecoded() {
 		if len(key) == 2 && key[0] == "ui" && key[1] == "tmux_mode_key" {

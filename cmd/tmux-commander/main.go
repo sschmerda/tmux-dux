@@ -126,8 +126,12 @@ func runPaletteOnce(state palette.State) (bool, palette.State, error) {
 		}
 		return false, result.State, nil
 	}
-	if cfg.UI.RecentCommands && cfg.UI.RecentLimit > 0 && recentPath != "" && result.Command.Internal == "" {
-		_, err := history.RecordWithLimits(recentPath, recentHistory, *result.Command, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit, time.Now().UTC())
+	historyCommand := result.Command
+	if result.HistoryCommand != nil {
+		historyCommand = result.HistoryCommand
+	}
+	if cfg.UI.RecentCommands && cfg.UI.RecentLimit > 0 && recentPath != "" && historyCommand.Internal == "" {
+		_, err := history.RecordWithLimits(recentPath, recentHistory, *historyCommand, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit, time.Now().UTC())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "tmux-commander: update history: %v\n", err)
 		}

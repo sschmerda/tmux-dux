@@ -161,6 +161,50 @@ func TestMatchesShowsRecentGroupAndKeepsNormalCategoryEntry(t *testing.T) {
 	}
 }
 
+func TestMatchesUsesTitleFallbackForRecentCommands(t *testing.T) {
+	current := config.Command{Title: "New Session", Category: "Sessions", Action: "tmux", Command: "new-session -d -s {{input}}"}
+	model := New(
+		[]config.Command{current},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		[]string{config.CommandTitleKey(config.Command{Title: "New Session", Action: "tmux"})},
+		"",
+		"",
+	)
+
+	matches := model.matches()
+	if len(matches) != 2 {
+		t.Fatalf("match count = %d, want 2", len(matches))
+	}
+	if matches[0].Command.Title != "New Session" || matches[0].Command.Category != recentCategory {
+		t.Fatalf("first match = %#v", matches[0].Command)
+	}
+	if matches[1].Command.Category != "Sessions" {
+		t.Fatalf("second match = %#v", matches[1].Command)
+	}
+}
+
+func TestMatchesDeduplicatesRecentFallbackKeys(t *testing.T) {
+	current := config.Command{Title: "New Session", Category: "Sessions", Action: "tmux", Command: "new-session -d -s {{input}}"}
+	model := New(
+		[]config.Command{current},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		[]string{config.CommandKey(current), config.CommandTitleKey(current)},
+		"",
+		"",
+	)
+
+	matches := model.matches()
+	if len(matches) != 2 {
+		t.Fatalf("match count = %d, want recent plus normal command", len(matches))
+	}
+}
+
 func TestMatchesAppliesRecentBoostWhenFiltering(t *testing.T) {
 	recent := config.Command{Title: "Git Status", Category: "Tools", Action: "tmux", Command: "git-status"}
 	other := config.Command{Title: "Git Stash", Category: "Tools", Action: "tmux", Command: "git-stash"}
@@ -481,6 +525,12 @@ func TestCommandInputReturnsRenderedCommand(t *testing.T) {
 	}
 	if updated.selected.Command != "new-session -d -s 'work repo'" {
 		t.Fatalf("command = %q", updated.selected.Command)
+	}
+	if updated.selectedHistory == nil {
+		t.Fatal("expected selected history command")
+	}
+	if updated.selectedHistory.Command != "new-session -d -s {{input}}" {
+		t.Fatalf("history command = %q", updated.selectedHistory.Command)
 	}
 	if cmd == nil {
 		t.Fatal("expected command input to quit the palette")

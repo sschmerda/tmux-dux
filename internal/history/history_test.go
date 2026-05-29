@@ -66,6 +66,28 @@ func TestRecordDeduplicatesAndMovesCommandToTop(t *testing.T) {
 	}
 }
 
+func TestRecentKeysIncludeTitleFallback(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "history.toml")
+	base := time.Date(2026, 5, 21, 10, 0, 0, 0, time.UTC)
+	cmd := config.Command{Title: "New Session", Action: "tmux", Command: "new-session -d -s 'work'"}
+
+	file, err := Record(path, File{Version: version}, cmd, 10, base)
+	if err != nil {
+		t.Fatalf("Record returned error: %v", err)
+	}
+
+	keys := file.RecentKeys(10)
+	if len(keys) != 2 {
+		t.Fatalf("key count = %d, want primary plus title fallback", len(keys))
+	}
+	if keys[0] != config.CommandKey(cmd) {
+		t.Fatalf("primary key = %q, want %q", keys[0], config.CommandKey(cmd))
+	}
+	if keys[1] != config.CommandTitleKey(cmd) {
+		t.Fatalf("fallback key = %q, want %q", keys[1], config.CommandTitleKey(cmd))
+	}
+}
+
 func TestRecordTrimsToLimit(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "history.toml")
 	base := time.Date(2026, 5, 21, 10, 0, 0, 0, time.UTC)

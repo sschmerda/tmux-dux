@@ -45,16 +45,18 @@ type Model struct {
 	cursor          int
 	offset          int
 	selected        *config.Command
+	selectedHistory *config.Command
 	selectedTmux    *tmuxcmd.Invocation
 	width           int
 	height          int
 }
 
 type Result struct {
-	Command *config.Command
-	Tmux    *tmuxcmd.Invocation
-	Theme   theme.Theme
-	State   State
+	Command        *config.Command
+	HistoryCommand *config.Command
+	Tmux           *tmuxcmd.Invocation
+	Theme          theme.Theme
+	State          State
 }
 
 type State struct {
@@ -192,7 +194,7 @@ func RunWithState(commands []config.Command, active theme.Theme, previewThemes [
 	if !ok {
 		return Result{Theme: active, State: state}, nil
 	}
-	return Result{Command: model.selected, Tmux: model.selectedTmux, Theme: model.activeTheme, State: model.state()}, nil
+	return Result{Command: model.selected, HistoryCommand: model.selectedHistory, Tmux: model.selectedTmux, Theme: model.activeTheme, State: model.state()}, nil
 }
 
 func (m Model) Init() tea.Cmd {
@@ -408,8 +410,10 @@ func (m Model) updateCommandInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.inputValue = ""
 	case "enter":
 		cmd := m.inputCommand
+		historyCommand := m.inputCommand
 		cmd.Command = renderCommandInput(cmd.Command, m.inputValue)
 		m.selected = &cmd
+		m.selectedHistory = &historyCommand
 		return m, tea.Quit
 	case "backspace", "ctrl+h":
 		if len(m.inputValue) > 0 {
@@ -895,7 +899,7 @@ func (m Model) matches() []fuzzy.Match {
 	}
 	matches := fuzzy.Filter(m.commands, m.query)
 	for i := range matches {
-		matches[i].Score += m.recentBoost(config.CommandKey(matches[i].Command))
+		matches[i].Score += m.recentBoostForCommand(matches[i].Command)
 	}
 	sort.SliceStable(matches, func(i, j int) bool {
 		if matches[i].Score == matches[j].Score {
@@ -1048,13 +1052,20 @@ func (m Model) commandsForEmptyQuery() []config.Command {
 			continue
 		}
 		byKey[config.CommandKey(cmd)] = cmd
+		byKey[config.CommandTitleKey(cmd)] = cmd
 	}
 	commands := make([]config.Command, 0, len(m.commands))
+	seen := map[string]bool{}
 	for _, key := range m.recentKeys {
 		cmd, ok := byKey[key]
 		if !ok {
 			continue
 		}
+		commandKey := config.CommandKey(cmd)
+		if seen[commandKey] {
+			continue
+		}
+		seen[commandKey] = true
 		cmd.Category = recentCategory
 		commands = append(commands, cmd)
 	}
@@ -1062,6 +1073,13 @@ func (m Model) commandsForEmptyQuery() []config.Command {
 		commands = append(commands, cmd)
 	}
 	return commands
+}
+
+func (m Model) recentBoostForCommand(cmd config.Command) int {
+	if boost := m.recentBoost(config.CommandKey(cmd)); boost > 0 {
+		return boost
+	}
+	return m.recentBoost(config.CommandTitleKey(cmd))
 }
 
 func (m Model) recentBoost(key string) int {
