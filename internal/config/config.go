@@ -299,7 +299,7 @@ func validateCommands(commands []Command) error {
 			return fmt.Errorf("command %q must define command", cmd.Title)
 		}
 		switch cmd.Action {
-		case "tmux", "shell", "popup":
+		case "tmux", "shell", "popup", "current_shell":
 		default:
 			return fmt.Errorf("command %q has unsupported action %q", cmd.Title, cmd.Action)
 		}

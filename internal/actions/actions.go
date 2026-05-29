@@ -15,9 +15,10 @@ import (
 type Kind string
 
 const (
-	KindTmux  Kind = "tmux"
-	KindShell Kind = "shell"
-	KindPopup Kind = "popup"
+	KindTmux         Kind = "tmux"
+	KindShell        Kind = "shell"
+	KindPopup        Kind = "popup"
+	KindCurrentShell Kind = "current_shell"
 )
 
 type Action struct {
@@ -38,6 +39,8 @@ func Build(cmd config.Command, ui config.UI, t theme.Theme) (Action, error) {
 		return deferredTmuxAction(KindTmux, "tmux "+command), nil
 	case KindShell:
 		return Action{Kind: KindShell, Command: shellPath(), Args: []string{"-lc", command}}, nil
+	case KindCurrentShell:
+		return currentShellAction(command), nil
 	case KindPopup:
 		args := []string{"tmux", "display-popup", "-E", "-b", "rounded", "-d", "#{pane_current_path}"}
 		if style := tmux.PopupStyle(t); style != "" {
@@ -98,6 +101,13 @@ func deferredTmuxAction(kind Kind, command string) Action {
 		Command: "tmux",
 		Args:    []string{"run-shell", "-b", "sleep 0.05; " + command},
 	}
+}
+
+func currentShellAction(command string) Action {
+	return deferredTmuxAction(
+		KindCurrentShell,
+		"tmux send-keys -l -- "+shellQuote(command)+" \\; send-keys Enter",
+	)
 }
 
 func shellJoin(args ...string) string {

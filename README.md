@@ -1,6 +1,6 @@
 # tmux-commander
 
-`tmux-commander` is a fast Go command palette for tmux. It is designed to run as a single executable inside a tmux popup, filter commands with a fuzzy search, exit cleanly, and then dispatch the selected tmux, shell, or popup action.
+`tmux-commander` is a fast Go command palette for tmux. It is designed to run as a single executable inside a tmux popup, filter commands with a fuzzy search, exit cleanly, and then dispatch the selected tmux, shell, popup, or current-pane shell action.
 
 ## Install
 
@@ -190,7 +190,7 @@ Key names are normalized, so `ctrl-y` and `ctrl+y` are equivalent.
 | `category` | No | Group header used when the query is empty, and a weak fuzzy-match field while filtering. |
 | `aliases` | No | Short searchable abbreviations rendered as chips. |
 | `icon` | No | Glyph shown to the left of the command title when `[ui].glyphs` is true. |
-| `action` | Yes | Dispatch type. Must be `tmux`, `shell`, or `popup`. |
+| `action` | Yes | Dispatch type. Must be `tmux`, `shell`, `popup`, or `current_shell`. |
 | `command` | Yes | Command string used by the selected `action`. |
 | `popup_width` | No | Per-command width override for `popup` actions. |
 | `popup_height` | No | Per-command height override for `popup` actions. |
@@ -311,7 +311,7 @@ The same history file also stores recent commands launched from tmux-command mod
 
 Each command must define an `action` and a `command`.
 
-User-defined actions are terminal handoffs. Selecting a `tmux`, `shell`, or `popup` command exits the commander first, then dispatches the command. This keeps tmux prompts and interactive terminal programs from competing with the Bubble Tea input loop.
+User-defined actions are terminal handoffs. Selecting a `tmux`, `shell`, `popup`, or `current_shell` command exits the commander first, then dispatches the command. This keeps tmux prompts and interactive terminal programs from competing with the Bubble Tea input loop.
 
 `action = "tmux"` runs `tmux <command>` after the palette exits:
 
@@ -326,6 +326,15 @@ command = "split-window -h -c '#{pane_current_path}'"
 action = "shell"
 command = "open https://github.com"
 ```
+
+`action = "current_shell"` sends the command to the active tmux pane and presses Enter after the palette exits:
+
+```toml
+action = "current_shell"
+command = "git status"
+```
+
+Use `current_shell` when you want command output to remain in the pane's normal shell history and scrollback. Use `shell` for quick side effects that do not need visible output.
 
 `action = "popup"` opens another tmux popup after the palette exits:
 

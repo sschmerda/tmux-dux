@@ -46,6 +46,30 @@ func TestBuildShellAction(t *testing.T) {
 	}
 }
 
+func TestBuildCurrentShellAction(t *testing.T) {
+	action, err := Build(config.Command{Action: "current_shell", Command: "git status"}, config.DefaultUI(), testTheme)
+	if err != nil {
+		t.Fatalf("Build returned error: %v", err)
+	}
+	if action.Kind != KindCurrentShell || action.Command != "tmux" {
+		t.Fatalf("unexpected action: %#v", action)
+	}
+	want := []string{"run-shell", "-b", "sleep 0.05; tmux send-keys -l -- 'git status' \\; send-keys Enter"}
+	if strings.Join(action.Args, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("args = %#v, want %#v", action.Args, want)
+	}
+}
+
+func TestBuildCurrentShellActionQuotesCommand(t *testing.T) {
+	action, err := Build(config.Command{Action: "current_shell", Command: "echo 'hi'"}, config.DefaultUI(), testTheme)
+	if err != nil {
+		t.Fatalf("Build returned error: %v", err)
+	}
+	if !strings.Contains(action.Args[2], "'echo '\\''hi'\\'''") {
+		t.Fatalf("current shell command was not shell quoted: %#v", action.Args)
+	}
+}
+
 func TestBuildPopupAction(t *testing.T) {
 	ui := config.UI{PopupWidth: "90%", PopupHeight: "50%"}
 	action, err := Build(config.Command{Action: "popup", Command: "lazygit"}, ui, testTheme)
