@@ -325,31 +325,33 @@ func blinkCursor() tea.Cmd {
 
 func (m Model) selectCommand() (tea.Model, tea.Cmd) {
 	matches := m.matches()
-	if len(matches) > 0 {
-		cmd := matches[m.cursor].Command
-		if cmd.Internal == config.InternalThemePreview {
-			m.mode = modeThemePreview
-			m.previewIndex = previewIndex(m.previewThemes, m.activeTheme.Name)
-			m.styles = newStyles(m.previewThemes[m.previewIndex])
-			return m, nil
-		}
-		if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath || cmd.Internal == config.InternalControls {
-			m.openMessage(cmd.Internal)
-			return m, nil
-		}
-		if cmd.Prompt != "" {
-			spec, ok := commandPromptSpec(cmd.Prompt)
-			if ok {
-				m.mode = modeCommandInput
-				m.inputCommand = cmd
-				m.inputPrompt = spec
-				m.inputValue = ""
-				m.caretVisible = true
-				return m, nil
-			}
-		}
-		m.selected = &cmd
+	if len(matches) == 0 {
+		return m, tea.Quit
 	}
+	m.clampSelection(len(matches))
+	cmd := matches[m.cursor].Command
+	if cmd.Internal == config.InternalThemePreview {
+		m.mode = modeThemePreview
+		m.previewIndex = previewIndex(m.previewThemes, m.activeTheme.Name)
+		m.styles = newStyles(m.previewThemes[m.previewIndex])
+		return m, nil
+	}
+	if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath || cmd.Internal == config.InternalControls {
+		m.openMessage(cmd.Internal)
+		return m, nil
+	}
+	if cmd.Prompt != "" {
+		spec, ok := commandPromptSpec(cmd.Prompt)
+		if ok {
+			m.mode = modeCommandInput
+			m.inputCommand = cmd
+			m.inputPrompt = spec
+			m.inputValue = ""
+			m.caretVisible = true
+			return m, nil
+		}
+	}
+	m.selected = &cmd
 	return m, tea.Quit
 }
 
@@ -358,6 +360,7 @@ func (m Model) selectTmuxCommand() (tea.Model, tea.Cmd) {
 	if len(matches) == 0 {
 		return m, nil
 	}
+	m.clampSelection(len(matches))
 	selected := matches[m.cursor]
 	if selected.Recent {
 		invocation := selected.Invocation
@@ -1263,6 +1266,18 @@ func clampCursor(cursor int, length int) int {
 		return length - 1
 	}
 	return cursor
+}
+
+func (m *Model) clampSelection(count int) {
+	if count == 0 {
+		m.cursor = 0
+		m.offset = 0
+		return
+	}
+	m.cursor = clampCursor(m.cursor, count)
+	if m.offset < 0 {
+		m.offset = 0
+	}
 }
 
 func (m *Model) ensureCursorVisible() {

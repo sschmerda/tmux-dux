@@ -367,6 +367,95 @@ func TestPopupInternalCommandExitsPalette(t *testing.T) {
 	}
 }
 
+func TestSelectCommandClampsCursorPastEnd(t *testing.T) {
+	model := New(
+		[]config.Command{
+			{Title: "One", Action: "shell", Command: "one"},
+			{Title: "Two", Action: "shell", Command: "two"},
+		},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		nil,
+		"",
+		"",
+	)
+	model.cursor = 10
+	model.offset = 10
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.selected == nil {
+		t.Fatal("expected selected command")
+	}
+	if updated.selected.Title != "Two" {
+		t.Fatalf("selected = %q, want Two", updated.selected.Title)
+	}
+	if updated.cursor != 1 || updated.offset != 10 {
+		t.Fatalf("cursor/offset = %d/%d, want 1/10", updated.cursor, updated.offset)
+	}
+	if cmd == nil {
+		t.Fatal("expected palette quit command")
+	}
+}
+
+func TestSelectCommandClampsNegativeCursor(t *testing.T) {
+	model := New(
+		[]config.Command{
+			{Title: "One", Action: "shell", Command: "one"},
+			{Title: "Two", Action: "shell", Command: "two"},
+		},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		nil,
+		"",
+		"",
+	)
+	model.cursor = -3
+	model.offset = -2
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.selected == nil {
+		t.Fatal("expected selected command")
+	}
+	if updated.selected.Title != "One" {
+		t.Fatalf("selected = %q, want One", updated.selected.Title)
+	}
+	if updated.cursor != 0 || updated.offset != 0 {
+		t.Fatalf("cursor/offset = %d/%d, want 0/0", updated.cursor, updated.offset)
+	}
+}
+
+func TestSelectTmuxCommandClampsCursorPastEnd(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.listMode = listModeTmux
+	model.tmuxCommands = []tmuxcmd.Command{
+		{Name: "display-message"},
+		{Name: "list-sessions"},
+	}
+	model.cursor = 8
+	model.offset = 8
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.selectedTmux == nil {
+		t.Fatal("expected selected tmux command")
+	}
+	if updated.selectedTmux.Name != "list-sessions" {
+		t.Fatalf("selected tmux = %q, want list-sessions", updated.selectedTmux.Name)
+	}
+	if updated.cursor != 1 || updated.offset != 8 {
+		t.Fatalf("cursor/offset = %d/%d, want 1/8", updated.cursor, updated.offset)
+	}
+	if cmd == nil {
+		t.Fatal("expected palette quit command")
+	}
+}
+
 func TestClearingSearchRestoresPreviousSelection(t *testing.T) {
 	model := New(commandList(8), theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
 	model.width = 80
