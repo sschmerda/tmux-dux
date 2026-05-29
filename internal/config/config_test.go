@@ -225,6 +225,31 @@ command = "split-window -h"
 	if cfg.Commands[0].Title != "External" {
 		t.Fatalf("first command = %#v, want commands.toml command", cfg.Commands[0])
 	}
+	assertSettingsLast(t, cfg.Commands)
+}
+
+func TestLoadFileRejectsInvalidCommandsFileWithoutConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.toml")
+	commandsPath := filepath.Join(dir, "commands.toml")
+	commandsInput := `
+[[commands]]
+title = "Broken"
+action = "tmux"
+command = "new-session -d"
+prompt = "session_name"
+`
+	if err := os.WriteFile(commandsPath, []byte(commandsInput), 0o600); err != nil {
+		t.Fatalf("write commands: %v", err)
+	}
+
+	_, err := LoadFile(configPath)
+	if err == nil {
+		t.Fatal("LoadFile returned nil error")
+	}
+	if !strings.Contains(err.Error(), "does not contain {{input}} or {{raw_input}}") {
+		t.Fatalf("error = %q, want prompt placeholder guidance", err.Error())
+	}
 }
 
 func TestLoadFileRejectsSettingsInCommandsFile(t *testing.T) {

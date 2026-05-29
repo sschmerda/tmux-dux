@@ -132,7 +132,7 @@ func LoadFile(path string) (Config, error) {
 			if err := loadCommandsFileIfExists(&cfg, CommandsPath(path)); err != nil {
 				return Config{}, err
 			}
-			return cfg, nil
+			return finalizeConfig(cfg)
 		}
 		return Config{}, err
 	}
@@ -214,6 +214,10 @@ func LoadFile(path string) (Config, error) {
 	if err := loadCommandsFileIfExists(&cfg, CommandsPath(path)); err != nil {
 		return Config{}, err
 	}
+	return finalizeConfig(cfg)
+}
+
+func finalizeConfig(cfg Config) (Config, error) {
 	if cfg.UI.RecentLimit < 0 {
 		return Config{}, errors.New("ui.recent_limit must be >= 0")
 	}
