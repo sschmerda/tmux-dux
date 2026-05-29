@@ -444,6 +444,56 @@ func TestTmuxArgumentViewShowsArgumentHelp(t *testing.T) {
 	}
 }
 
+func TestSelectingPromptedCommandOpensCommandInput(t *testing.T) {
+	model := New(
+		[]config.Command{{Title: "New Session", Action: "tmux", Command: "new-session -d -s {{input}}", Prompt: "session_name"}},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		nil,
+		"",
+		"",
+	)
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.mode != modeCommandInput {
+		t.Fatalf("mode = %v, want command input", updated.mode)
+	}
+	if updated.inputPrompt.Label != "session name" {
+		t.Fatalf("prompt label = %q, want session name", updated.inputPrompt.Label)
+	}
+}
+
+func TestCommandInputReturnsRenderedCommand(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.mode = modeCommandInput
+	model.inputCommand = config.Command{Title: "New Session", Action: "tmux", Command: "new-session -d -s {{input}}", Prompt: "session_name"}
+	model.inputPrompt, _ = commandPromptSpec("session_name")
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("work repo")})
+	updated := next.(Model)
+	next, cmd := updated.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated = next.(Model)
+	if updated.selected == nil {
+		t.Fatal("expected selected command")
+	}
+	if updated.selected.Command != "new-session -d -s 'work repo'" {
+		t.Fatalf("command = %q", updated.selected.Command)
+	}
+	if cmd == nil {
+		t.Fatal("expected command input to quit the palette")
+	}
+}
+
+func TestCommandInputCanRenderRawPlaceholder(t *testing.T) {
+	got := renderCommandInput("find-window {{raw_input}}", "foo bar")
+	if got != "find-window foo bar" {
+		t.Fatalf("command = %q", got)
+	}
+}
+
 func TestRecentTmuxCommandsAppearBeforeCatalog(t *testing.T) {
 	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
 	model.listMode = listModeTmux

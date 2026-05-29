@@ -47,6 +47,7 @@ type Command struct {
 	Icon        string   `toml:"icon"`
 	Action      string   `toml:"action"`
 	Command     string   `toml:"command"`
+	Prompt      string   `toml:"prompt"`
 	PopupWidth  string   `toml:"popup_width"`
 	PopupHeight string   `toml:"popup_height"`
 	Internal    string   `toml:"-"`
@@ -303,8 +304,24 @@ func validateCommands(commands []Command) error {
 		default:
 			return fmt.Errorf("command %q has unsupported action %q", cmd.Title, cmd.Action)
 		}
+		cmd.Prompt = strings.ToLower(strings.TrimSpace(cmd.Prompt))
+		if cmd.Prompt != "" && !IsPromptName(cmd.Prompt) {
+			return fmt.Errorf("command %q has unsupported prompt %q", cmd.Title, cmd.Prompt)
+		}
+		if cmd.Prompt != "" && !strings.Contains(cmd.Command, "{{input}}") && !strings.Contains(cmd.Command, "{{raw_input}}") {
+			return fmt.Errorf("command %q defines prompt %q but command does not contain {{input}} or {{raw_input}}", cmd.Title, cmd.Prompt)
+		}
 	}
 	return nil
+}
+
+func IsPromptName(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "session_name", "window_name", "target_index", "file_path", "command", "search_query":
+		return true
+	default:
+		return false
+	}
 }
 
 func ensureInternalCommands(commands []Command) []Command {

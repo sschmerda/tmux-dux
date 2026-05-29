@@ -88,7 +88,8 @@ category = "Tools"
 aliases = ["log", "tail"]
 icon = "file"
 action = "popup"
-command = "tail -f app.log"
+command = "tail -f {{input}}"
+prompt = "file_path"
 popup_width = "95%"
 popup_height = "85%"
 `
@@ -135,8 +136,11 @@ popup_height = "85%"
 	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.CommanderBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
 	}
-	if cfg.Commands[0].Action != "popup" || cfg.Commands[0].Command != "tail -f app.log" {
+	if cfg.Commands[0].Action != "popup" || cfg.Commands[0].Command != "tail -f {{input}}" {
 		t.Fatalf("action command = %q %q", cfg.Commands[0].Action, cfg.Commands[0].Command)
+	}
+	if cfg.Commands[0].Prompt != "file_path" {
+		t.Fatalf("prompt = %q, want file_path", cfg.Commands[0].Prompt)
 	}
 	if cfg.Commands[0].PopupWidth != "95%" || cfg.Commands[0].PopupHeight != "85%" {
 		t.Fatalf("popup size = %q x %q", cfg.Commands[0].PopupWidth, cfg.Commands[0].PopupHeight)
@@ -156,6 +160,40 @@ popup_height = "85%"
 		if !found {
 			t.Fatalf("missing internal command %q", internal)
 		}
+	}
+}
+
+func TestLoadFileRejectsUnsupportedPrompt(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[[commands]]
+title = "Broken"
+action = "tmux"
+command = "new-session -s {{input}}"
+prompt = "unknown"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := LoadFile(path); err == nil {
+		t.Fatal("LoadFile returned nil error")
+	}
+}
+
+func TestLoadFileRejectsPromptWithoutPlaceholder(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[[commands]]
+title = "Broken"
+action = "tmux"
+command = "new-session -d"
+prompt = "session_name"
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := LoadFile(path); err == nil {
+		t.Fatal("LoadFile returned nil error")
 	}
 }
 

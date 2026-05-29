@@ -38,6 +38,9 @@ type Model struct {
 	messageBody     string
 	argCommand      tmuxcmd.Command
 	argValue        string
+	inputCommand    config.Command
+	inputPrompt     promptSpec
+	inputValue      string
 	caretVisible    bool
 	cursor          int
 	offset          int
@@ -67,6 +70,7 @@ const (
 	modeThemePreview
 	modeMessage
 	modeTmuxArgs
+	modeCommandInput
 )
 
 type listMode int
@@ -93,6 +97,13 @@ type tmuxMatch struct {
 	Command    tmuxcmd.Command
 	Invocation tmuxcmd.Invocation
 	Recent     bool
+}
+
+type promptSpec struct {
+	Name        string
+	Label       string
+	Description string
+	Placeholder string
 }
 
 type styles struct {
@@ -221,6 +232,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == modeTmuxArgs {
 			return m.updateTmuxArgs(msg)
 		}
+		if m.mode == modeCommandInput {
+			return m.updateCommandInput(msg)
+		}
 		switch msg.String() {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
@@ -293,6 +307,17 @@ func (m Model) selectCommand() (tea.Model, tea.Cmd) {
 		if cmd.Internal == config.InternalClearRecent || cmd.Internal == config.InternalConfigPath || cmd.Internal == config.InternalControls {
 			m.openMessage(cmd.Internal)
 			return m, nil
+		}
+		if cmd.Prompt != "" {
+			spec, ok := commandPromptSpec(cmd.Prompt)
+			if ok {
+				m.mode = modeCommandInput
+				m.inputCommand = cmd
+				m.inputPrompt = spec
+				m.inputValue = ""
+				m.caretVisible = true
+				return m, nil
+			}
 		}
 		m.selected = &cmd
 	}
@@ -374,6 +399,32 @@ func (m Model) updateTmuxArgs(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) updateCommandInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c":
+		return m, tea.Quit
+	case "esc":
+		m.mode = modeCommands
+		m.inputValue = ""
+	case "enter":
+		cmd := m.inputCommand
+		cmd.Command = renderCommandInput(cmd.Command, m.inputValue)
+		m.selected = &cmd
+		return m, tea.Quit
+	case "backspace", "ctrl+h":
+		if len(m.inputValue) > 0 {
+			m.inputValue = m.inputValue[:len(m.inputValue)-1]
+			m.caretVisible = true
+		}
+	default:
+		if len(msg.Runes) > 0 {
+			m.inputValue += string(msg.Runes)
+			m.caretVisible = true
+		}
+	}
+	return m, nil
+}
+
 func (m Model) updateMessage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c":
@@ -400,6 +451,9 @@ func (m Model) View() string {
 	}
 	if m.mode == modeTmuxArgs {
 		return m.viewTmuxArgs()
+	}
+	if m.mode == modeCommandInput {
+		return m.viewCommandInput()
 	}
 	if m.listMode == listModeTmux {
 		return m.viewTmuxCommands()
@@ -602,7 +656,32 @@ func (m Model) viewTmuxArgs() string {
 	return m.renderFrame(b.String())
 }
 
+func (m Model) viewCommandInput() string {
+	s := m.styles
+	var b strings.Builder
+	b.WriteString(m.renderSubviewHeader("Command Input"))
+	b.WriteString("\n\n")
+	b.WriteString(s.header.Render(m.inputCommand.Title))
+	if m.inputCommand.Description != "" {
+		b.WriteString("\n")
+		b.WriteString(s.muted.Render(m.inputCommand.Description))
+	}
+	if m.inputPrompt.Description != "" {
+		b.WriteString("\n\n")
+		b.WriteString(s.desc.Render(m.inputPrompt.Description))
+	}
+	b.WriteString("\n\n")
+	b.WriteString(m.renderInputBox(m.inputPrompt.Label, m.inputValue))
+	b.WriteString("\n\n")
+	b.WriteString(s.muted.Render("Enter runs command, Esc returns to command list"))
+	return m.renderFrame(b.String())
+}
+
 func (m Model) renderArgumentBox() string {
+	return m.renderInputBox("args", m.argValue)
+}
+
+func (m Model) renderInputBox(label string, value string) string {
 	width := m.innerWidth()
 	fill := m.activeTheme.SearchBG
 	contentWidth := width - 4
@@ -616,13 +695,13 @@ func (m Model) renderArgumentBox() string {
 		cursor = "█"
 	}
 	promptStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.activeTheme.Glyph)).Background(lipgloss.Color(fill))
-	prompt := "args ❯ "
+	prompt := label + " ❯ "
 	prefix := promptStyle.Render(prompt)
 	inputBudget := contentWidth - lipgloss.Width(prompt) - lipgloss.Width(cursor)
 	if inputBudget < 1 {
 		inputBudget = 1
 	}
-	content := prefix + valueStyle.Render(truncate(m.argValue, inputBudget)) + promptStyle.Render(cursor)
+	content := prefix + valueStyle.Render(truncate(value, inputBudget)) + promptStyle.Render(cursor)
 
 	return lipgloss.NewStyle().
 		Width(width-2).
@@ -923,6 +1002,40 @@ func (m Model) findTmuxCommand(name string) tmuxcmd.Command {
 		}
 	}
 	return tmuxcmd.Command{Name: name, TakesArgs: true}
+}
+
+func commandPromptSpec(name string) (promptSpec, bool) {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "session_name":
+		return promptSpec{Name: "session_name", Label: "session name", Description: "Enter the tmux session name to use for this command."}, true
+	case "window_name":
+		return promptSpec{Name: "window_name", Label: "window name", Description: "Enter the tmux window name to use for this command."}, true
+	case "target_index":
+		return promptSpec{Name: "target_index", Label: "target index", Description: "Enter the tmux target index to use for this command."}, true
+	case "file_path":
+		return promptSpec{Name: "file_path", Label: "file path", Description: "Enter the file path to use for this command."}, true
+	case "command":
+		return promptSpec{Name: "command", Label: "command", Description: "Enter the command string to use for this command."}, true
+	case "search_query":
+		return promptSpec{Name: "search_query", Label: "search query", Description: "Enter the search query to use for this command."}, true
+	default:
+		return promptSpec{}, false
+	}
+}
+
+func renderCommandInput(command string, value string) string {
+	return strings.ReplaceAll(
+		strings.ReplaceAll(command, "{{raw_input}}", value),
+		"{{input}}",
+		shellQuote(value),
+	)
+}
+
+func shellQuote(s string) string {
+	if s == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
 func (m Model) commandsForEmptyQuery() []config.Command {

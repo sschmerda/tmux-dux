@@ -139,6 +139,14 @@ category = "Panes"
 aliases = ["sh"]
 action = "tmux"
 command = "split-window -h -c '#{pane_current_path}'"
+
+[[commands]]
+title = "New Session"
+description = "Prompt for a new detached session"
+category = "Sessions"
+action = "tmux"
+command = "new-session -d -s {{input}}"
+prompt = "session_name"
 ```
 
 `width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
@@ -192,6 +200,7 @@ Key names are normalized, so `ctrl-y` and `ctrl+y` are equivalent.
 | `icon` | No | Glyph shown to the left of the command title when `[ui].glyphs` is true. |
 | `action` | Yes | Dispatch type. Must be `tmux`, `shell`, `popup`, or `current_shell`. |
 | `command` | Yes | Command string used by the selected `action`. |
+| `prompt` | No | Built-in in-popup input prompt. Supported values: `session_name`, `window_name`, `target_index`, `file_path`, `command`, `search_query`. |
 | `popup_width` | No | Per-command width override for `popup` actions. |
 | `popup_height` | No | Per-command height override for `popup` actions. |
 
@@ -319,6 +328,16 @@ User-defined actions are terminal handoffs. Selecting a `tmux`, `shell`, `popup`
 action = "tmux"
 command = "split-window -h -c '#{pane_current_path}'"
 ```
+
+Commands may define `prompt` to collect one value inside the commander popup before dispatch. The input screen uses the same styling as the tmux-command argument prompt.
+
+```toml
+action = "tmux"
+command = "new-session -d -s {{input}}"
+prompt = "session_name"
+```
+
+`{{input}}` inserts a shell-quoted value, which is the right default for names and paths. `{{raw_input}}` inserts the typed value without quoting for advanced command templates.
 
 `action = "shell"` runs the command through the user's shell after the palette exits:
 
