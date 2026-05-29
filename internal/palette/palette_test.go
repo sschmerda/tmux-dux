@@ -367,6 +367,49 @@ func TestPopupInternalCommandExitsPalette(t *testing.T) {
 	}
 }
 
+func TestClearingSearchRestoresPreviousSelection(t *testing.T) {
+	model := New(commandList(8), theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 80
+	model.height = 24
+	model.cursor = 5
+	model.offset = 3
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+	updated := next.(Model)
+	if updated.cursor != 0 || updated.offset != 0 {
+		t.Fatalf("search cursor/offset = %d/%d, want 0/0", updated.cursor, updated.offset)
+	}
+
+	next, _ = updated.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	updated = next.(Model)
+	if updated.query != "" {
+		t.Fatalf("query = %q, want empty", updated.query)
+	}
+	if updated.cursor != 5 || updated.offset != 3 {
+		t.Fatalf("restored cursor/offset = %d/%d, want 5/3", updated.cursor, updated.offset)
+	}
+}
+
+func TestEditingNonEmptySearchKeepsFilteredSelectionAtTop(t *testing.T) {
+	model := New(commandList(8), theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 80
+	model.height = 24
+	model.cursor = 5
+	model.offset = 3
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("xy")})
+	updated := next.(Model)
+	next, _ = updated.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	updated = next.(Model)
+
+	if updated.query != "x" {
+		t.Fatalf("query = %q, want x", updated.query)
+	}
+	if updated.cursor != 0 || updated.offset != 0 {
+		t.Fatalf("cursor/offset = %d/%d, want 0/0", updated.cursor, updated.offset)
+	}
+}
+
 func TestCtrlTTogglesTmuxCommandMode(t *testing.T) {
 	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
 	model.tmuxCommands = []tmuxcmd.Command{{Name: "split-window", Usage: "[-h]", TakesArgs: true}}

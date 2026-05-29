@@ -44,6 +44,9 @@ type Model struct {
 	caretVisible    bool
 	cursor          int
 	offset          int
+	preSearchActive bool
+	preSearchCursor int
+	preSearchOffset int
 	selected        *config.Command
 	selectedHistory *config.Command
 	selectedTmux    *tmuxcmd.Invocation
@@ -273,21 +276,45 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ensureCursorVisible()
 		case "backspace", "ctrl+h":
 			if len(m.query) > 0 {
-				m.query = m.query[:len(m.query)-1]
-				m.cursor = 0
-				m.offset = 0
-				m.caretVisible = true
+				m.removeQueryRune()
 			}
 		default:
 			if len(msg.Runes) > 0 {
-				m.query += string(msg.Runes)
-				m.cursor = 0
-				m.offset = 0
-				m.caretVisible = true
+				m.appendQuery(string(msg.Runes))
 			}
 		}
 	}
 	return m, nil
+}
+
+func (m *Model) appendQuery(value string) {
+	if strings.TrimSpace(m.query) == "" && value != "" && !m.preSearchActive {
+		m.preSearchActive = true
+		m.preSearchCursor = m.cursor
+		m.preSearchOffset = m.offset
+	}
+	m.query += value
+	m.cursor = 0
+	m.offset = 0
+	m.caretVisible = true
+}
+
+func (m *Model) removeQueryRune() {
+	if len(m.query) == 0 {
+		return
+	}
+	runes := []rune(m.query)
+	m.query = string(runes[:len(runes)-1])
+	if m.query == "" && m.preSearchActive {
+		m.cursor = m.preSearchCursor
+		m.offset = m.preSearchOffset
+		m.preSearchActive = false
+		m.ensureCursorVisible()
+	} else {
+		m.cursor = 0
+		m.offset = 0
+	}
+	m.caretVisible = true
 }
 
 func blinkCursor() tea.Cmd {
@@ -357,6 +384,7 @@ func (m *Model) toggleListMode() {
 	}
 	m.cursor = 0
 	m.offset = 0
+	m.preSearchActive = false
 	m.caretVisible = true
 }
 
