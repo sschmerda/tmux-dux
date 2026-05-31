@@ -19,6 +19,7 @@ func TestConfigInitWritesEmptyConfigFilesWhenNoConfigExists(t *testing.T) {
 
 	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
 	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
 	configBytes, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("read config: %v", err)
@@ -33,6 +34,13 @@ func TestConfigInitWritesEmptyConfigFilesWhenNoConfigExists(t *testing.T) {
 	if len(commandsBytes) != 0 {
 		t.Fatal("config init wrote non-empty commands.toml")
 	}
+	scriptsInfo, err := os.Stat(scriptsPath)
+	if err != nil {
+		t.Fatalf("stat scripts dir: %v", err)
+	}
+	if !scriptsInfo.IsDir() {
+		t.Fatal("config init created scripts path as non-directory")
+	}
 }
 
 func TestConfigInitWritesOnlySelectedConfigFile(t *testing.T) {
@@ -41,6 +49,7 @@ func TestConfigInitWritesOnlySelectedConfigFile(t *testing.T) {
 
 	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
 	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
 
 	var out bytes.Buffer
 	if err := configInit(&out, []string{"--config"}); err != nil {
@@ -60,14 +69,30 @@ func TestConfigInitWritesOnlySelectedConfigFile(t *testing.T) {
 	if _, err := os.Stat(commandsPath); err != nil {
 		t.Fatalf("stat commands: %v", err)
 	}
+	if _, err := os.Stat(scriptsPath); !os.IsNotExist(err) {
+		t.Fatal("config init --commands created scripts directory")
+	}
+
+	out.Reset()
+	if err := configInit(&out, []string{"--script_dir"}); err != nil {
+		t.Fatalf("configInit --script_dir returned error: %v", err)
+	}
+	scriptsInfo, err := os.Stat(scriptsPath)
+	if err != nil {
+		t.Fatalf("stat scripts dir: %v", err)
+	}
+	if !scriptsInfo.IsDir() {
+		t.Fatal("config init --script_dir created scripts path as non-directory")
+	}
 }
 
-func TestConfigInitRefusesWhenSelectedConfigFileExists(t *testing.T) {
+func TestConfigInitRefusesWhenSelectedTargetExists(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
 
 	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
 	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
 		t.Fatalf("create config dir: %v", err)
 	}
@@ -102,6 +127,23 @@ func TestConfigInitRefusesWhenSelectedConfigFileExists(t *testing.T) {
 	if _, err := os.Stat(configPath); !os.IsNotExist(err) {
 		t.Fatal("config init created config.toml even though commands.toml existed")
 	}
+
+	if err := os.Remove(commandsPath); err != nil {
+		t.Fatalf("remove commands: %v", err)
+	}
+	if err := os.Mkdir(scriptsPath, 0o755); err != nil {
+		t.Fatalf("create existing scripts dir: %v", err)
+	}
+	out.Reset()
+	if err := configInit(&out, []string{"--script_dir"}); err == nil {
+		t.Fatal("configInit --script_dir returned nil error with existing scripts directory")
+	}
+	if _, err := os.Stat(configPath); !os.IsNotExist(err) {
+		t.Fatal("config init created config.toml even though scripts directory existed")
+	}
+	if _, err := os.Stat(commandsPath); !os.IsNotExist(err) {
+		t.Fatal("config init created commands.toml even though scripts directory existed")
+	}
 }
 
 func TestConfigInitRefusesAllWhenAnySelectedFileExists(t *testing.T) {
@@ -110,6 +152,7 @@ func TestConfigInitRefusesAllWhenAnySelectedFileExists(t *testing.T) {
 
 	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
 	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
 		t.Fatalf("create config dir: %v", err)
 	}
@@ -127,6 +170,9 @@ func TestConfigInitRefusesAllWhenAnySelectedFileExists(t *testing.T) {
 	}
 	if _, err := os.Stat(commandsPath); !os.IsNotExist(err) {
 		t.Fatal("config init created commands.toml even though config.toml existed")
+	}
+	if _, err := os.Stat(scriptsPath); !os.IsNotExist(err) {
+		t.Fatal("config init created scripts directory even though config.toml existed")
 	}
 }
 

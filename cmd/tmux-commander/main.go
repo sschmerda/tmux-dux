@@ -72,12 +72,16 @@ func configInit(out io.Writer, args []string) error {
 		return err
 	}
 	commandsPath := config.CommandsPath(configPath)
-	paths := make([]string, 0, 2)
+	scriptsPath := filepath.Join(filepath.Dir(configPath), "scripts")
+	paths := make([]string, 0, 3)
 	if targets.config {
 		paths = append(paths, configPath)
 	}
 	if targets.commands {
 		paths = append(paths, commandsPath)
+	}
+	if targets.scriptDir {
+		paths = append(paths, scriptsPath)
 	}
 	existing, err := existingConfigFiles(paths...)
 	if err != nil {
@@ -99,12 +103,18 @@ func configInit(out io.Writer, args []string) error {
 			return err
 		}
 	}
+	if targets.scriptDir {
+		if err := writeEmptyConfigDirectory(out, scriptsPath); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 type configInitSelection struct {
-	config   bool
-	commands bool
+	config    bool
+	commands  bool
+	scriptDir bool
 }
 
 func configInitTargets(args []string) (configInitSelection, error) {
@@ -115,13 +125,16 @@ func configInitTargets(args []string) (configInitSelection, error) {
 			targets.config = true
 		case "--commands":
 			targets.commands = true
+		case "--script_dir":
+			targets.scriptDir = true
 		default:
 			return targets, fmt.Errorf("unknown config init flag %q", arg)
 		}
 	}
-	if !targets.config && !targets.commands {
+	if !targets.config && !targets.commands && !targets.scriptDir {
 		targets.config = true
 		targets.commands = true
+		targets.scriptDir = true
 	}
 	return targets, nil
 }
@@ -146,6 +159,14 @@ func writeEmptyConfigFile(out io.Writer, path string) error {
 	}
 	if err := file.Close(); err != nil {
 		return fmt.Errorf("close %s: %w", path, err)
+	}
+	fmt.Fprintf(out, "created: %s\n", path)
+	return nil
+}
+
+func writeEmptyConfigDirectory(out io.Writer, path string) error {
+	if err := os.Mkdir(path, 0o755); err != nil {
+		return fmt.Errorf("create %s: %w", path, err)
 	}
 	fmt.Fprintf(out, "created: %s\n", path)
 	return nil

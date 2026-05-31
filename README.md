@@ -113,11 +113,12 @@ Create empty config files explicitly:
 tmux-commander config init
 tmux-commander config init --config
 tmux-commander config init --commands
+tmux-commander config init --script_dir
 ```
 
-`config init` creates the config directory when needed. Without flags, it creates both empty files and fails without creating anything if either selected file already exists.
+`config init` creates the config directory when needed. Without flags, it creates empty `config.toml` and `commands.toml` files plus an empty `scripts/` directory for script-backed custom commands. It fails without creating anything if any selected target already exists.
 
-Use `--config` to create only `config.toml`, or `--commands` to create only `commands.toml`. Each flag fails if its respective file already exists. Passing both flags is equivalent to the default behavior.
+Use `--config` to create only `config.toml`, `--commands` to create only `commands.toml`, or `--script_dir` to create only the `scripts/` directory. Each flag fails if its respective target already exists. Passing all flags is equivalent to the default behavior.
 
 `config.toml`:
 
