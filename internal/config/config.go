@@ -97,7 +97,7 @@ func DefaultConfig() Config {
 	return Config{
 		UI:       DefaultUI(),
 		Keys:     DefaultKeys(),
-		Commands: ensureInternalCommands(DefaultCommands()),
+		Commands: SettingsCommands(),
 	}
 }
 
@@ -224,9 +224,6 @@ func finalizeConfig(cfg Config) (Config, error) {
 	}
 	if cfg.UI.TmuxRecentLimit < 0 {
 		return Config{}, errors.New("ui.tmux_recent_limit must be >= 0")
-	}
-	if len(cfg.Commands) == 0 {
-		cfg.Commands = DefaultCommands()
 	}
 	cfg.Commands = ensureInternalCommands(cfg.Commands)
 	if err := validateCommands(cfg.Commands); err != nil {
