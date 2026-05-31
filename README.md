@@ -33,14 +33,14 @@ TMUX_COMMANDER_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/sschm
 
 The installer supports macOS and Linux on `amd64` and `arm64`, matching the precompiled GitHub release archives. It installs to `~/.local/bin` by default. Override that with `TMUX_COMMANDER_INSTALL_DIR`.
 
-Verify a downloaded release archive with GitHub artifact attestations:
+Verify a downloaded release archive with GitHub artifact attestations when the release was built from a public repository:
 
 ```sh
 gh attestation verify tmux-commander_linux_arm64.tar.gz \
   --repo sschmerda/tmux-commander
 ```
 
-The installer verifies SHA256 checksums automatically. Artifact attestation verification additionally proves that a release archive was produced by this repository's GitHub Actions release workflow.
+The installer verifies SHA256 checksums automatically. Artifact attestation verification additionally proves that a release archive was produced by this repository's GitHub Actions release workflow. GitHub does not currently persist attestations for user-owned private repositories, so the release workflow skips attestation until the repository is public.
 
 Build from source:
 
@@ -508,7 +508,7 @@ Run inside tmux for a realistic manual test:
 
 ## Release Builds
 
-Release builds are handled by GoReleaser and GitHub Actions. Pushing a `v*` tag runs tests, builds Linux/macOS `amd64` and `arm64` archives, generates `checksums.txt`, publishes a GitHub release, and creates artifact attestations for the release archives.
+Release builds are handled by GoReleaser and GitHub Actions. Pushing a `v*` tag runs tests, builds Linux/macOS `amd64` and `arm64` archives, generates `checksums.txt`, and publishes a GitHub release. For public repositories, the workflow also creates artifact attestations for the release archives.
 
 Create a release:
 
@@ -523,7 +523,7 @@ Run a local snapshot with GoReleaser:
 goreleaser release --snapshot --clean
 ```
 
-Verify a published release archive:
+Verify a published release archive with GitHub artifact attestations when the release was built from a public repository:
 
 ```sh
 gh attestation verify tmux-commander_linux_arm64.tar.gz \
