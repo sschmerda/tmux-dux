@@ -440,6 +440,9 @@ func (m Model) updateCommandInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mode = modeCommands
 		m.inputValue = ""
 	case "enter":
+		if !validPromptValue(m.inputPrompt, m.inputValue) {
+			return m, nil
+		}
 		cmd := m.inputCommand
 		historyCommand := m.inputCommand
 		cmd.Command = renderCommandInput(cmd.Command, m.inputValue)
@@ -1047,6 +1050,8 @@ func commandPromptSpec(name string) (promptSpec, bool) {
 		return promptSpec{Name: "window_name", Label: "window name", Description: "Enter the tmux window name to use for this command."}, true
 	case "target_index":
 		return promptSpec{Name: "target_index", Label: "target index", Description: "Enter the tmux target index to use for this command."}, true
+	case "count":
+		return promptSpec{Name: "count", Label: "count", Description: "Enter the number of times to repeat this command."}, true
 	case "file_path":
 		return promptSpec{Name: "file_path", Label: "file path", Description: "Enter the file path to use for this command."}, true
 	case "command":
@@ -1056,6 +1061,21 @@ func commandPromptSpec(name string) (promptSpec, bool) {
 	default:
 		return promptSpec{}, false
 	}
+}
+
+func validPromptValue(spec promptSpec, value string) bool {
+	if spec.Name != "count" {
+		return true
+	}
+	if value == "" {
+		return false
+	}
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func renderCommandInput(command string, value string) string {

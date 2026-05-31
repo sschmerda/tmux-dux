@@ -213,7 +213,7 @@ Key names are normalized, so `ctrl-y` and `ctrl+y` are equivalent.
 | `icon` | No | Glyph shown to the left of the command title when `[ui].glyphs` is true. |
 | `action` | Yes | Dispatch type. Must be `tmux`, `shell`, `popup`, or `current_shell`. |
 | `command` | Yes | Command string used by the selected `action`. |
-| `prompt` | No | Built-in in-popup input prompt. Supported values: `session_name`, `window_name`, `target_index`, `file_path`, `command`, `search_query`. |
+| `prompt` | No | Built-in in-popup input prompt. Supported values: `session_name`, `window_name`, `target_index`, `file_path`, `command`, `search_query`, `count`. |
 | `popup_width` | No | Per-command width override for `popup` actions. |
 | `popup_height` | No | Per-command height override for `popup` actions. |
 
@@ -362,6 +362,7 @@ Built-in prompt names:
 | `file_path` | Save/load commands and commands that need a filesystem path. |
 | `command` | Free-form tmux or shell command input. |
 | `search_query` | Search commands such as `find-window`. |
+| `count` | Numeric repeat-count commands, such as moving a window several positions. |
 
 `action = "shell"` runs the command through the user's shell after the palette exits. Use it for quick side effects that do not need visible output, such as copying text to a tmux buffer or opening a URL. Avoid it for commands that print output you need to read, because they run in the shell context left by the commander popup.
 

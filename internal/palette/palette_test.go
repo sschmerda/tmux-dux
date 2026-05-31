@@ -676,6 +676,16 @@ func TestCommandInputCanRenderRawPlaceholder(t *testing.T) {
 	}
 }
 
+func TestCountPromptRequiresDigits(t *testing.T) {
+	spec, _ := commandPromptSpec("count")
+	if !validPromptValue(spec, "3") {
+		t.Fatal("count prompt rejected numeric input")
+	}
+	if validPromptValue(spec, "3; display-message bad") {
+		t.Fatal("count prompt accepted non-numeric input")
+	}
+}
+
 func TestRecentTmuxCommandsAppearBeforeCatalog(t *testing.T) {
 	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
 	model.listMode = listModeTmux

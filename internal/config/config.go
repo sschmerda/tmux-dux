@@ -371,7 +371,7 @@ func validateCommands(commands []Command) error {
 
 func IsPromptName(name string) bool {
 	switch strings.ToLower(strings.TrimSpace(name)) {
-	case "session_name", "window_name", "target_index", "file_path", "command", "search_query":
+	case "session_name", "window_name", "target_index", "file_path", "command", "search_query", "count":
 		return true
 	default:
 		return false
