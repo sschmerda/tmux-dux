@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,6 +33,13 @@ func main() {
 			fmt.Printf("tmux-commander %s (%s, %s)\n", version, commit, date)
 			return
 		}
+		if os.Args[1] == "config" && len(os.Args) > 2 && os.Args[2] == "init" {
+			if err := configInit(os.Stdout, os.Args[3:]); err != nil {
+				fmt.Fprintf(os.Stderr, "tmux-commander: config init: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		}
 		cfg, _, err := config.Load()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "tmux-commander: load config: %v\n", err)
@@ -52,6 +60,95 @@ func main() {
 		fmt.Fprintf(os.Stderr, "tmux-commander: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func configInit(out io.Writer, args []string) error {
+	targets, err := configInitTargets(args)
+	if err != nil {
+		return err
+	}
+	configPath, err := config.Path()
+	if err != nil {
+		return err
+	}
+	commandsPath := config.CommandsPath(configPath)
+	paths := make([]string, 0, 2)
+	if targets.config {
+		paths = append(paths, configPath)
+	}
+	if targets.commands {
+		paths = append(paths, commandsPath)
+	}
+	existing, err := existingConfigFiles(paths...)
+	if err != nil {
+		return err
+	}
+	if len(existing) > 0 {
+		return fmt.Errorf("refusing to create config files because %s already exists", strings.Join(existing, ", "))
+	}
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		return fmt.Errorf("create config directory: %w", err)
+	}
+	if targets.config {
+		if err := writeEmptyConfigFile(out, configPath); err != nil {
+			return err
+		}
+	}
+	if targets.commands {
+		if err := writeEmptyConfigFile(out, commandsPath); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type configInitSelection struct {
+	config   bool
+	commands bool
+}
+
+func configInitTargets(args []string) (configInitSelection, error) {
+	targets := configInitSelection{}
+	for _, arg := range args {
+		switch arg {
+		case "--config":
+			targets.config = true
+		case "--commands":
+			targets.commands = true
+		default:
+			return targets, fmt.Errorf("unknown config init flag %q", arg)
+		}
+	}
+	if !targets.config && !targets.commands {
+		targets.config = true
+		targets.commands = true
+	}
+	return targets, nil
+}
+
+func existingConfigFiles(paths ...string) ([]string, error) {
+	var existing []string
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			existing = append(existing, path)
+			continue
+		} else if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("stat %s: %w", path, err)
+		}
+	}
+	return existing, nil
+}
+
+func writeEmptyConfigFile(out io.Writer, path string) error {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return fmt.Errorf("create %s: %w", path, err)
+	}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("close %s: %w", path, err)
+	}
+	fmt.Fprintf(out, "created: %s\n", path)
+	return nil
 }
 
 func runPalette() error {

@@ -92,7 +92,32 @@ If `commands.toml` exists, its `[[commands]]` replace any inline `[[commands]]` 
 
 If no config file exists, built-in defaults are used. If no command definitions exist, built-in commands are used.
 
-Full examples are available in `examples/default-config.toml` and `examples/default-commands.toml`. Copy the first to `config.toml` for all app settings, and copy the second to `commands.toml` for the default workflow command catalog.
+Full example blueprints are available in this repository:
+
+- `examples/default-config.toml` for app settings
+- `examples/default-commands.toml` for workflow commands
+
+Use them as references for:
+
+- `$XDG_CONFIG_HOME/tmux-commander/config.toml`
+- `$XDG_CONFIG_HOME/tmux-commander/commands.toml`
+
+or, without `XDG_CONFIG_HOME`:
+
+- `~/.config/tmux-commander/config.toml`
+- `~/.config/tmux-commander/commands.toml`
+
+Create empty config files explicitly:
+
+```sh
+tmux-commander config init
+tmux-commander config init --config
+tmux-commander config init --commands
+```
+
+`config init` creates the config directory when needed. Without flags, it creates both empty files and fails without creating anything if either selected file already exists.
+
+Use `--config` to create only `config.toml`, or `--commands` to create only `commands.toml`. Each flag fails if its respective file already exists. Passing both flags is equivalent to the default behavior.
 
 `config.toml`:
 
@@ -468,6 +493,7 @@ The deliberate differences in `tmux-commander` are:
 ```sh
 go test ./...
 go run ./cmd/tmux-commander
+go run ./cmd/tmux-commander config init
 go run ./cmd/tmux-commander themes
 go run ./cmd/tmux-commander version
 go build -o bin/tmux-commander ./cmd/tmux-commander
