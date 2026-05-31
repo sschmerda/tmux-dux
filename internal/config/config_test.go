@@ -12,8 +12,8 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFile returned error: %v", err)
 	}
-	if got, want := len(cfg.Commands), len(SettingsCommands()); got != want {
-		t.Fatalf("default command count = %d, want %d", got, want)
+	if got := len(cfg.Commands); got < 50 {
+		t.Fatalf("default command count = %d, want at least 50", got)
 	}
 	if cfg.UI.Width != "40%" || cfg.UI.PopupWidth != "80%" {
 		t.Fatalf("unexpected default UI: %#v", cfg.UI)

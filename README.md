@@ -90,7 +90,7 @@ Command definitions may either live inline in `config.toml` or in a sibling file
 
 If `commands.toml` exists, its `[[commands]]` replace any inline `[[commands]]` from `config.toml`. This keeps app settings small while allowing long command catalogs. `commands.toml` may only define `[[commands]]`; keep `[ui]`, `[keys]`, and `[custom_theme]` in `config.toml`.
 
-If no config file exists, built-in UI/key defaults are used. If no command definitions exist, only the built-in `Settings tmux-commander` commands are shown. User workflow commands are expected to live in `commands.toml`.
+If no config file exists, built-in defaults are used. If no command definitions exist, built-in commands are used.
 
 `config.toml`:
 
@@ -425,16 +425,28 @@ Internal message views such as `Show Controls`, `Clear Recent Commands`, and `Li
 
 When the query is empty, commands are grouped by recent use and category. While filtering, category headers are hidden and results are sorted by fuzzy score with a small recency boost. Multi-token searches such as `split pane` are supported.
 
-## Built-In Settings Commands
+## Default Commands
 
-These commands are always available, even when no `commands.toml` exists:
-
+- Find Pane
+- Split Horizontal
+- Split Vertical
+- Close Pane
+- Zoom / Unzoom
+- New Window
+- Rename Window
+- Close Window
+- Choose Session
+- New Session
+- Rename Session
+- Detach
 - Preview Themes
 - Clear Recent Commands
 - List Config Path
 - Show Controls
 - Open / Edit Config
 - Reload Config
+- Lazygit
+- Btop
 
 ## Compared With eduwass/tmux-palette
 
