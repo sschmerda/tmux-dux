@@ -12,8 +12,8 @@ func TestLoadFileMissingReturnsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFile returned error: %v", err)
 	}
-	if got := len(cfg.Commands); got < 50 {
-		t.Fatalf("default command count = %d, want at least 50", got)
+	if got, want := len(cfg.Commands), len(SettingsCommands()); got != want {
+		t.Fatalf("default command count = %d, want %d", got, want)
 	}
 	if cfg.UI.Width != "40%" || cfg.UI.PopupWidth != "80%" {
 		t.Fatalf("unexpected default UI: %#v", cfg.UI)
@@ -479,33 +479,24 @@ command = "display-panes"
 	}
 }
 
-func TestDefaultCommandsContainExpectedInitialSet(t *testing.T) {
+func TestDefaultCommandsOnlyContainSettings(t *testing.T) {
 	commands := DefaultCommands()
 	want := map[string]bool{
-		"Find Pane":             false,
-		"Split Horizontal":      false,
-		"Split Vertical":        false,
-		"Close Pane":            false,
-		"Zoom / Unzoom":         false,
-		"New Window":            false,
-		"Rename Window":         false,
-		"Close Window":          false,
-		"Choose Session":        false,
-		"New Session":           false,
-		"Rename Session":        false,
-		"Detach":                false,
 		"Preview Themes":        false,
 		"Clear Recent Commands": false,
 		"List Config Path":      false,
 		"Show Controls":         false,
 		"Open / Edit Config":    false,
 		"Reload Config":         false,
-		"Lazygit":               false,
-		"Btop":                  false,
+	}
+	if len(commands) != len(want) {
+		t.Fatalf("default command count = %d, want %d", len(commands), len(want))
 	}
 	for _, cmd := range commands {
 		if _, ok := want[cmd.Title]; ok {
 			want[cmd.Title] = true
+		} else {
+			t.Fatalf("unexpected default command %q", cmd.Title)
 		}
 	}
 	for title, found := range want {

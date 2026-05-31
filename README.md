@@ -90,7 +90,7 @@ Command definitions may either live inline in `config.toml` or in a sibling file
 
 If `commands.toml` exists, its `[[commands]]` replace any inline `[[commands]]` from `config.toml`. This keeps app settings small while allowing long command catalogs. `commands.toml` may only define `[[commands]]`; keep `[ui]`, `[keys]`, and `[custom_theme]` in `config.toml`.
 
-If no config file exists, built-in defaults are used. If no command definitions exist, built-in commands are used.
+If no config file exists, built-in app defaults are used. If no command definitions exist, only the built-in `Settings tmux-commander` commands are shown. Workflow commands live in user config, with a full example catalog in `examples/default-commands.toml`.
 
 Full example blueprints are available in this repository:
 
