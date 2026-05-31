@@ -37,6 +37,7 @@ type Model struct {
 	query           string
 	messageTitle    string
 	messageBody     string
+	messageStatus   string
 	argCommand      tmuxcmd.Command
 	argValue        string
 	inputCommand    config.Command
@@ -101,6 +102,10 @@ type cursorBlinkMsg struct{}
 type commandOutputMsg struct {
 	title string
 	body  string
+}
+
+type messageCopiedMsg struct {
+	err error
 }
 
 type tmuxMatch struct {
@@ -228,6 +233,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case commandOutputMsg:
 		m.openCommandOutput(msg.title, msg.body)
+		return m, nil
+	case messageCopiedMsg:
+		if msg.err != nil {
+			m.messageStatus = "Copy failed: " + msg.err.Error()
+		} else {
+			m.messageStatus = "Copied to tmux clipboard"
+		}
 		return m, nil
 	case cursorBlinkMsg:
 		m.caretVisible = !m.caretVisible
@@ -489,6 +501,10 @@ func (m Model) updateMessage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mode = modeCommands
 		m.messageTitle = ""
 		m.messageBody = ""
+		m.messageStatus = ""
+	case "c", "y":
+		m.messageStatus = "Copying..."
+		return m, copyMessageBody(m.messageBody)
 	}
 	return m, nil
 }
@@ -680,7 +696,11 @@ func (m Model) viewMessage() string {
 		b.WriteString("\n")
 	}
 	b.WriteString("\n")
-	b.WriteString(s.muted.Render("Esc/q returns to commands"))
+	if m.messageStatus != "" {
+		b.WriteString(s.desc.Render(m.messageStatus))
+		b.WriteString("\n")
+	}
+	b.WriteString(s.muted.Render("c/y copies, Esc/q returns to commands"))
 	return m.renderFrame(b.String())
 }
 
@@ -811,6 +831,7 @@ func isPathLine(line string) bool {
 }
 
 func (m *Model) openMessage(internal string) {
+	m.messageStatus = ""
 	switch internal {
 	case config.InternalClearRecent:
 		m.messageTitle = "Clear Recent Commands"
@@ -841,6 +862,7 @@ func (m *Model) openCommandOutput(title string, body string) {
 	m.mode = modeMessage
 	m.messageTitle = title
 	m.messageBody = strings.TrimRight(body, "\n")
+	m.messageStatus = ""
 	if m.messageBody == "" {
 		m.messageBody = "(no output)"
 	}
@@ -849,6 +871,14 @@ func (m *Model) openCommandOutput(title string, body string) {
 func runOutputCommand(cmd config.Command) tea.Cmd {
 	return func() tea.Msg {
 		return commandOutputMsg{title: cmd.Title, body: commandOutput(cmd)}
+	}
+}
+
+func copyMessageBody(body string) tea.Cmd {
+	return func() tea.Msg {
+		cmd := exec.Command("tmux", "load-buffer", "-w", "-")
+		cmd.Stdin = strings.NewReader(body)
+		return messageCopiedMsg{err: cmd.Run()}
 	}
 }
 

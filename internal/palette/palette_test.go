@@ -431,6 +431,41 @@ func TestShowOutputCommandStaysInPalette(t *testing.T) {
 	}
 }
 
+func TestMessageViewAdvertisesCopyKey(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.width = 80
+	model.height = 24
+	model.openCommandOutput("Output", "hello")
+
+	view := model.viewMessage()
+	if !strings.Contains(view, "c/y copies") {
+		t.Fatalf("view did not include copy hint: %q", view)
+	}
+}
+
+func TestMessageCopyKeyKeepsMessageOpen(t *testing.T) {
+	model := New(nil, theme.Resolve("shades-of-purple"), nil, true, true, nil, "", "")
+	model.openCommandOutput("Output", "hello")
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("c")})
+	updated := next.(Model)
+	if updated.mode != modeMessage {
+		t.Fatalf("mode = %v, want message", updated.mode)
+	}
+	if updated.messageStatus != "Copying..." {
+		t.Fatalf("message status = %q, want Copying...", updated.messageStatus)
+	}
+	if cmd == nil {
+		t.Fatal("expected copy command")
+	}
+
+	next, _ = updated.Update(messageCopiedMsg{})
+	updated = next.(Model)
+	if updated.messageStatus != "Copied to tmux clipboard" {
+		t.Fatalf("message status = %q, want copied", updated.messageStatus)
+	}
+}
+
 func TestSelectCommandClampsNegativeCursor(t *testing.T) {
 	model := New(
 		[]config.Command{

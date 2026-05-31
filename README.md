@@ -372,7 +372,7 @@ action = "shell"
 command = "open https://github.com"
 ```
 
-`show_output = true` is intended for non-interactive `tmux` or `shell` commands. Press `Esc` or `q` to return to the command list.
+`show_output = true` is intended for non-interactive `tmux` or `shell` commands. Press `c` or `y` to copy the visible output through `tmux load-buffer -w -`; press `Esc` or `q` to return to the command list.
 
 ```toml
 action = "shell"
@@ -421,7 +421,7 @@ In tmux-command mode, the palette fuzzy-searches tmux command names. Selecting a
 
 In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list at the previous position.
 
-Internal message views such as `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup. Press `Esc` or `q` to return to the command list at the previous position.
+Internal message views such as `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup. Press `c` or `y` to copy the message body through `tmux load-buffer -w -`; press `Esc` or `q` to return to the command list at the previous position.
 
 When the query is empty, commands are grouped by recent use and category. While filtering, category headers are hidden and results are sorted by fuzzy score with a small recency boost. Multi-token searches such as `split pane` are supported.
 
