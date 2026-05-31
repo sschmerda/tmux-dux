@@ -1,0 +1,537 @@
+[[commands]]
+title = "Find Pane"
+description = "Select a pane interactively"
+category = "Panes"
+aliases = ["fp"]
+icon = "󰓩"
+action = "tmux"
+command = "display-panes"
+
+[[commands]]
+title = "Split Horizontal"
+description = "Split pane side by side"
+category = "Panes"
+aliases = ["sh"]
+icon = ""
+action = "tmux"
+command = "split-window -h -c '#{pane_current_path}'"
+
+[[commands]]
+title = "Split Horizontal 30%"
+description = "Open a right pane using 30 percent of the width"
+category = "Panes"
+aliases = ["sh30"]
+icon = ""
+action = "tmux"
+command = "split-window -h -p 30 -c '#{pane_current_path}'"
+
+[[commands]]
+title = "Split Vertical"
+description = "Split pane top and bottom"
+category = "Panes"
+aliases = ["sv"]
+icon = ""
+action = "tmux"
+command = "split-window -v -c '#{pane_current_path}'"
+
+[[commands]]
+title = "Split Vertical 30%"
+description = "Open a lower pane using 30 percent of the height"
+category = "Panes"
+aliases = ["sv30"]
+icon = ""
+action = "tmux"
+command = "split-window -v -p 30 -c '#{pane_current_path}'"
+
+[[commands]]
+title = "Break Pane"
+description = "Move the current pane into a new window"
+category = "Panes"
+aliases = ["bp"]
+icon = "󰤼"
+action = "tmux"
+command = "break-pane -d"
+
+[[commands]]
+title = "Join Pane"
+description = "Choose a pane to join into the current window"
+category = "Panes"
+aliases = ["jp"]
+icon = "󰡍"
+action = "tmux"
+command = '''choose-tree -Zw "join-pane -s '%%'"'''
+
+[[commands]]
+title = "Swap Pane Up"
+description = "Swap the current pane with the previous pane"
+category = "Panes"
+aliases = ["spu"]
+icon = "󰁝"
+action = "tmux"
+command = "swap-pane -U"
+
+[[commands]]
+title = "Swap Pane Down"
+description = "Swap the current pane with the next pane"
+category = "Panes"
+aliases = ["spd"]
+icon = "󰁅"
+action = "tmux"
+command = "swap-pane -D"
+
+[[commands]]
+title = "Even Horizontal Layout"
+description = "Arrange panes evenly left to right"
+category = "Panes"
+aliases = ["eh"]
+icon = "󰕰"
+action = "tmux"
+command = "select-layout even-horizontal"
+
+[[commands]]
+title = "Even Vertical Layout"
+description = "Arrange panes evenly top to bottom"
+category = "Panes"
+aliases = ["ev"]
+icon = "󰕲"
+action = "tmux"
+command = "select-layout even-vertical"
+
+[[commands]]
+title = "Tiled Layout"
+description = "Arrange panes in a tiled layout"
+category = "Panes"
+aliases = ["tile"]
+icon = "󰕮"
+action = "tmux"
+command = "select-layout tiled"
+
+[[commands]]
+title = "Synchronize Panes"
+description = "Toggle sending input to all panes in this window"
+category = "Panes"
+aliases = ["sync"]
+icon = "󰒓"
+action = "tmux"
+command = "set-window-option synchronize-panes"
+
+[[commands]]
+title = "Close Pane"
+description = "Kill the current pane"
+category = "Panes"
+aliases = ["kp"]
+icon = "󰅖"
+action = "tmux"
+command = "kill-pane"
+
+[[commands]]
+title = "Zoom / Unzoom"
+description = "Toggle pane zoom"
+category = "Panes"
+aliases = ["z"]
+icon = "󰍉"
+action = "tmux"
+command = "resize-pane -Z"
+
+[[commands]]
+title = "New Window"
+description = "Create a new window in the current path"
+category = "Windows"
+aliases = ["nw"]
+icon = "󰖯"
+action = "tmux"
+command = "new-window -c '#{pane_current_path}'"
+
+[[commands]]
+title = "New Window Named"
+description = "Prompt for a new window name in the current path"
+category = "Windows"
+aliases = ["nwn"]
+icon = "󰖯"
+action = "tmux"
+command = "new-window -n {{input}} -c '#{pane_current_path}'"
+prompt = "window_name"
+
+[[commands]]
+title = "Next Window"
+description = "Move to the next window"
+category = "Windows"
+aliases = ["next"]
+icon = "󰒭"
+action = "tmux"
+command = "next-window"
+
+[[commands]]
+title = "Previous Window"
+description = "Move to the previous window"
+category = "Windows"
+aliases = ["prev"]
+icon = "󰒮"
+action = "tmux"
+command = "previous-window"
+
+[[commands]]
+title = "Last Window"
+description = "Switch to the last active window"
+category = "Windows"
+aliases = ["last"]
+icon = "󰁯"
+action = "tmux"
+command = "last-window"
+
+[[commands]]
+title = "Choose Window"
+description = "Open tmux window chooser fullscreen"
+category = "Windows"
+aliases = ["cw"]
+icon = "󰖲"
+action = "tmux"
+command = "choose-tree -Zw"
+
+[[commands]]
+title = "Move Window Left"
+description = "Swap the current window with the previous window"
+category = "Windows"
+aliases = ["mwl"]
+icon = "󰁌"
+action = "tmux"
+command = "swap-window -t -1"
+
+[[commands]]
+title = "Move Window Right"
+description = "Swap the current window with the next window"
+category = "Windows"
+aliases = ["mwr"]
+icon = "󰁔"
+action = "tmux"
+command = "swap-window -t +1"
+
+[[commands]]
+title = "Move Window Left by Count"
+description = "Prompt for how many positions to move the current window left"
+category = "Windows"
+aliases = ["mwlc"]
+icon = "󰁌"
+action = "tmux"
+command = '''run-shell 'count={{raw_input}}; case "$count" in *[!0-9]*|"") tmux display-message "count must be numeric"; exit 0 ;; esac; current=$(tmux display-message -p "#{window_id}"); while [ "$count" -gt 0 ]; do tmux swap-window -s "$current" -t -1 || exit 0; tmux select-window -t "$current"; count=$((count - 1)); done''''
+prompt = "count"
+
+[[commands]]
+title = "Move Window Right by Count"
+description = "Prompt for how many positions to move the current window right"
+category = "Windows"
+aliases = ["mwrc"]
+icon = "󰁔"
+action = "tmux"
+command = '''run-shell 'count={{raw_input}}; case "$count" in *[!0-9]*|"") tmux display-message "count must be numeric"; exit 0 ;; esac; current=$(tmux display-message -p "#{window_id}"); while [ "$count" -gt 0 ]; do tmux swap-window -s "$current" -t +1 || exit 0; tmux select-window -t "$current"; count=$((count - 1)); done''''
+prompt = "count"
+
+[[commands]]
+title = "Rename Window"
+description = "Prompt for a new window name"
+category = "Windows"
+aliases = ["rw"]
+icon = "󰑕"
+action = "tmux"
+command = "rename-window -- {{input}}"
+prompt = "window_name"
+
+[[commands]]
+title = "Close Window"
+description = "Kill the current window"
+category = "Windows"
+aliases = ["kw"]
+icon = "󰖭"
+action = "tmux"
+command = "kill-window"
+
+[[commands]]
+title = "Choose Session"
+description = "Open tmux session chooser fullscreen"
+category = "Sessions"
+aliases = ["cs"]
+icon = "󱂬"
+action = "tmux"
+command = "choose-tree -Zs"
+
+[[commands]]
+title = "New Session"
+description = "Prompt for a new detached session"
+category = "Sessions"
+aliases = ["ns"]
+icon = "󰆧"
+action = "tmux"
+command = "new-session -d -s {{input}}"
+prompt = "session_name"
+
+[[commands]]
+title = "New Attached Session"
+description = "Prompt for a new session and switch to it"
+category = "Sessions"
+aliases = ["nas"]
+icon = "󰆧"
+action = "tmux"
+command = "new-session -d -s {{input}} \\; switch-client -t {{input}}"
+prompt = "session_name"
+
+[[commands]]
+title = "Rename Session"
+description = "Prompt for a new session name"
+category = "Sessions"
+aliases = ["rs"]
+icon = "󰑕"
+action = "tmux"
+command = "rename-session -- {{input}}"
+prompt = "session_name"
+
+[[commands]]
+title = "Detach"
+description = "Detach the current tmux client"
+category = "Sessions"
+aliases = ["d"]
+icon = "󰍃"
+action = "tmux"
+command = "detach-client"
+
+[[commands]]
+title = "Switch Client"
+description = "Prompt for a session to switch this client to"
+category = "Sessions"
+aliases = ["sc"]
+icon = "󱂬"
+action = "tmux"
+command = "switch-client -t {{input}}"
+prompt = "session_name"
+
+[[commands]]
+title = "List Sessions"
+description = "List sessions in the current pane"
+category = "Sessions"
+aliases = ["ls"]
+icon = "󰒻"
+action = "tmux"
+command = "list-sessions"
+
+[[commands]]
+title = "Save Buffer"
+description = "Choose a paste buffer and save it to a file"
+category = "Buffers"
+aliases = ["sb"]
+icon = "󰆓"
+action = "tmux"
+command = '''choose-buffer "save-buffer -b '%%' {{input}}"'''
+prompt = "file_path"
+
+[[commands]]
+title = "Paste Buffer"
+description = "Choose a paste buffer and paste it"
+category = "Buffers"
+aliases = ["pb"]
+icon = "󰆒"
+action = "tmux"
+command = '''choose-buffer "paste-buffer -p -b '%%'"'''
+
+[[commands]]
+title = "Show Buffer"
+description = "Choose a paste buffer and show its contents"
+category = "Buffers"
+aliases = ["showb"]
+icon = "󰈙"
+action = "tmux"
+command = '''choose-buffer "show-buffer -b '%%'"'''
+
+[[commands]]
+title = "Copy Mode"
+description = "Enter copy mode"
+category = "Copy"
+aliases = ["copy"]
+icon = "󰆏"
+action = "tmux"
+command = "copy-mode"
+
+[[commands]]
+title = "Copy Mode History Top"
+description = "Enter copy mode and jump to the top of history"
+category = "Copy"
+aliases = ["copytop"]
+icon = "󰆏"
+action = "tmux"
+command = "copy-mode \\; send-keys -X history-top"
+
+[[commands]]
+title = "Raw tmux Command"
+description = "Prompt for a raw tmux command string"
+category = "Tmux"
+aliases = [":"]
+icon = "󰘳"
+action = "tmux"
+command = "{{raw_input}}"
+prompt = "command"
+
+[[commands]]
+title = "Show Messages"
+description = "Show tmux message history"
+category = "Tmux"
+aliases = ["msgs"]
+icon = "󰍡"
+action = "tmux"
+command = "show-messages"
+
+[[commands]]
+title = "Reload tmux Config"
+description = "Reload ~/.tmux.conf"
+category = "Tmux"
+aliases = ["rtc"]
+icon = "󰑐"
+action = "tmux"
+command = "source-file ~/.tmux.conf \\; display-message 'tmux config reloaded'"
+
+[[commands]]
+title = "Lazygit"
+description = "Open lazygit in a popup"
+category = "Tools"
+aliases = ["lg"]
+icon = "󰊢"
+action = "popup"
+command = "lazygit"
+popup_width = "95%"
+popup_height = "90%"
+
+[[commands]]
+title = "Btop"
+description = "Open btop in a popup"
+category = "Tools"
+aliases = ["bt"]
+icon = "󰘚"
+action = "popup"
+command = "btop"
+popup_width = "95%"
+popup_height = "90%"
+
+[[commands]]
+title = "Htop"
+description = "Open htop in a popup"
+category = "Tools"
+aliases = ["ht"]
+icon = "󰘚"
+action = "popup"
+command = "htop"
+popup_width = "95%"
+popup_height = "90%"
+
+[[commands]]
+title = "Git Status"
+description = "Show short git status in a popup"
+category = "Git"
+aliases = ["gs"]
+icon = "󰊢"
+action = "popup"
+command = "sh -lc 'git status --short --branch; printf \"\\npress enter to close\"; read -r _'"
+popup_width = "50%"
+popup_height = "90%"
+
+[[commands]]
+title = "Git Log"
+description = "Show a compact git log in a popup"
+category = "Git"
+aliases = ["gl"]
+icon = "󰊢"
+action = "popup"
+command = "sh -lc 'git log --oneline --graph --decorate --all -n 50; printf \"\\npress enter to close\"; read -r _'"
+popup_width = "50%"
+popup_height = "90%"
+
+[[commands]]
+title = "Open Project in Editor"
+description = "Open the current working directory in $EDITOR"
+category = "Shell"
+aliases = ["edit"]
+icon = "󰏫"
+action = "popup"
+command = "${EDITOR:-vi} ."
+popup_width = "95%"
+popup_height = "90%"
+
+[[commands]]
+title = "Open GitHub"
+description = "Open GitHub in the default browser"
+category = "Shell"
+aliases = ["gh"]
+icon = "󰊤"
+action = "shell"
+command = "open https://github.com || xdg-open https://github.com"
+
+[[commands]]
+title = "Open Repo on GitHub"
+description = "Open the current repository on GitHub"
+category = "Shell"
+aliases = ["repo"]
+icon = "󰊤"
+action = "shell"
+command = '''url=$(git remote get-url origin 2>/dev/null); url=${url%.git}; case "$url" in git@github.com:*) url="https://github.com/${url#git@github.com:}" ;; https://github.com/*) ;; *) url="https://github.com" ;; esac; open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null'''
+
+[[commands]]
+title = "Copy Working Directory"
+description = "Copy the current working directory to a tmux buffer"
+category = "Shell"
+aliases = ["pwd"]
+icon = "󰅍"
+action = "shell"
+command = "pwd | tmux load-buffer -w -"
+
+[[commands]]
+title = "Copy Git Branch"
+description = "Copy the current git branch to a tmux buffer"
+category = "Shell"
+aliases = ["branch"]
+icon = "󰘬"
+action = "shell"
+command = "git branch --show-current | tmux load-buffer -w -"
+
+[[commands]]
+title = "Show Date"
+description = "Show the current date inside commander"
+category = "Shell"
+aliases = ["date"]
+icon = "󰃰"
+action = "shell"
+command = "date"
+show_output = true
+
+[[commands]]
+title = "Git Branch"
+description = "Show current git branch inside commander"
+category = "Git"
+aliases = ["branch"]
+icon = "󰊢"
+action = "shell"
+command = "git branch --show-current"
+show_output = true
+
+[[commands]]
+title = "Git Remote"
+description = "Show git remotes inside commander"
+category = "Git"
+aliases = ["remote"]
+icon = "󰊢"
+action = "shell"
+command = "git remote -v"
+show_output = true
+
+[[commands]]
+title = "Git Status in Pane"
+description = "Run git status in the active pane"
+category = "Current Shell"
+aliases = ["gsp"]
+icon = "󰊢"
+action = "current_shell"
+command = "git status"
+
+[[commands]]
+title = "List Files in Pane"
+description = "Run ls -la in the active pane"
+category = "Current Shell"
+aliases = ["ll"]
+icon = "󰉋"
+action = "current_shell"
+command = "ls -la"

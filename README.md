@@ -92,6 +92,8 @@ If `commands.toml` exists, its `[[commands]]` replace any inline `[[commands]]` 
 
 If no config file exists, built-in defaults are used. If no command definitions exist, built-in commands are used.
 
+Full examples are available in `examples/default-config.toml` and `examples/default-commands.toml`. Copy the first to `config.toml` for all app settings, and copy the second to `commands.toml` for the default workflow command catalog.
+
 `config.toml`:
 
 ```toml

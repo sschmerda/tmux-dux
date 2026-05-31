@@ -1,0 +1,48 @@
+[ui]
+width = "40%"
+height = "80%"
+popup_width = "80%"
+popup_height = "80%"
+border = true
+theme = "shades-of-purple"
+glyphs = true
+show_description = true
+show_toggle_hint = true
+tmux_description = true
+recent_commands = true
+recent_limit = 10
+tmux_recent_limit = 10
+
+[keys]
+tmux_mode = "ctrl+t"
+move_up = "ctrl+p"
+move_down = "ctrl+n"
+scroll_up = "ctrl+y"
+scroll_down = "ctrl+e"
+half_page_up = "ctrl+u"
+half_page_down = "ctrl+d"
+next_category = "tab"
+previous_category = "shift+tab"
+
+[custom_theme]
+background = "#2d2b55"
+title = "#ffffff"
+commander_border = "#d7d3ff"
+prompt_border = "#d7d3ff"
+header = "#fad000"
+muted = "#6e6a86"
+prompt = "#fad000"
+query = "#ffffff"
+search_bg = "#3b3770"
+search_fg = "#ffffff"
+description = "#8f89aa"
+empty = "#8f89aa"
+chip = "#fad000"
+chip_bg = "#3b3770"
+selected_chip = "#ffffff"
+selected_chip_bg = "#514a91"
+glyph = "#fad000"
+match_fg = "#fad000"
+selected_match_fg = "#fad000"
+selected_fg = "#ffffff"
+selected_bg = "#4b438f"
