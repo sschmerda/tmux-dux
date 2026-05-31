@@ -302,6 +302,23 @@ prompt = "session_name"
 	}
 }
 
+func TestLoadFileRejectsShowOutputForPopup(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	input := `
+[[commands]]
+title = "Broken"
+action = "popup"
+command = "lazygit"
+show_output = true
+`
+	if err := os.WriteFile(path, []byte(input), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := LoadFile(path); err == nil {
+		t.Fatal("LoadFile returned nil error")
+	}
+}
+
 func TestPathUsesXDGConfigHome(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "/tmp/config-root")
 	path, err := Path()

@@ -3,6 +3,7 @@ package palette
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 	"time"
@@ -96,6 +97,11 @@ const tmuxCommandCategory = "tmux Commands"
 const recentScoreBoost = 50
 
 type cursorBlinkMsg struct{}
+
+type commandOutputMsg struct {
+	title string
+	body  string
+}
 
 type tmuxMatch struct {
 	Match      fuzzy.Match
@@ -220,6 +226,9 @@ func (m Model) state() State {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case commandOutputMsg:
+		m.openCommandOutput(msg.title, msg.body)
+		return m, nil
 	case cursorBlinkMsg:
 		m.caretVisible = !m.caretVisible
 		return m, blinkCursor()
@@ -351,6 +360,10 @@ func (m Model) selectCommand() (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	}
+	if cmd.ShowOutput {
+		m.openCommandOutput(cmd.Title, "Running...")
+		return m, runOutputCommand(cmd)
+	}
 	m.selected = &cmd
 	return m, tea.Quit
 }
@@ -446,6 +459,11 @@ func (m Model) updateCommandInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		cmd := m.inputCommand
 		historyCommand := m.inputCommand
 		cmd.Command = renderCommandInput(cmd.Command, m.inputValue)
+		if cmd.ShowOutput {
+			m.selectedHistory = &historyCommand
+			m.openCommandOutput(cmd.Title, "Running...")
+			return m, runOutputCommand(cmd)
+		}
 		m.selected = &cmd
 		m.selectedHistory = &historyCommand
 		return m, tea.Quit
@@ -817,6 +835,53 @@ func (m *Model) openMessage(internal string) {
 		m.messageBody = ""
 	}
 	m.mode = modeMessage
+}
+
+func (m *Model) openCommandOutput(title string, body string) {
+	m.mode = modeMessage
+	m.messageTitle = title
+	m.messageBody = strings.TrimRight(body, "\n")
+	if m.messageBody == "" {
+		m.messageBody = "(no output)"
+	}
+}
+
+func runOutputCommand(cmd config.Command) tea.Cmd {
+	return func() tea.Msg {
+		return commandOutputMsg{title: cmd.Title, body: commandOutput(cmd)}
+	}
+}
+
+func commandOutput(cmd config.Command) string {
+	action := strings.ToLower(strings.TrimSpace(cmd.Action))
+	command := strings.TrimSpace(cmd.Command)
+
+	var execCmd *exec.Cmd
+	switch action {
+	case "tmux":
+		execCmd = exec.Command(shellPath(), "-lc", "tmux "+command)
+	case "shell":
+		execCmd = exec.Command(shellPath(), "-lc", command)
+	default:
+		return fmt.Sprintf("show_output is only supported for tmux and shell actions, not %q", cmd.Action)
+	}
+
+	output, err := execCmd.CombinedOutput()
+	body := string(output)
+	if err != nil {
+		if body != "" {
+			body += "\n"
+		}
+		body += err.Error()
+	}
+	return body
+}
+
+func shellPath() string {
+	if shell := os.Getenv("SHELL"); shell != "" {
+		return shell
+	}
+	return "/bin/sh"
 }
 
 func (m Model) controlsMessage() string {

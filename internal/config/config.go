@@ -48,6 +48,7 @@ type Command struct {
 	Action      string   `toml:"action"`
 	Command     string   `toml:"command"`
 	Prompt      string   `toml:"prompt"`
+	ShowOutput  bool     `toml:"show_output"`
 	PopupWidth  string   `toml:"popup_width"`
 	PopupHeight string   `toml:"popup_height"`
 	Internal    string   `toml:"-"`
@@ -357,6 +358,9 @@ func validateCommands(commands []Command) error {
 		case "tmux", "shell", "popup", "current_shell":
 		default:
 			return fmt.Errorf("command %q has unsupported action %q", cmd.Title, cmd.Action)
+		}
+		if cmd.ShowOutput && cmd.Action != "tmux" && cmd.Action != "shell" {
+			return fmt.Errorf("command %q uses show_output with unsupported action %q", cmd.Title, cmd.Action)
 		}
 		cmd.Prompt = strings.ToLower(strings.TrimSpace(cmd.Prompt))
 		if cmd.Prompt != "" && !IsPromptName(cmd.Prompt) {

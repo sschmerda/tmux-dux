@@ -214,6 +214,7 @@ Key names are normalized, so `ctrl-y` and `ctrl+y` are equivalent.
 | `action` | Yes | Dispatch type. Must be `tmux`, `shell`, `popup`, or `current_shell`. |
 | `command` | Yes | Command string used by the selected `action`. |
 | `prompt` | No | Built-in in-popup input prompt. Supported values: `session_name`, `window_name`, `target_index`, `file_path`, `command`, `search_query`, `count`. |
+| `show_output` | No | Run a non-interactive `tmux` or `shell` command inside commander and show stdout/stderr in a themed output view. |
 | `popup_width` | No | Per-command width override for `popup` actions. |
 | `popup_height` | No | Per-command height override for `popup` actions. |
 
@@ -364,11 +365,19 @@ Built-in prompt names:
 | `search_query` | Search commands such as `find-window`. |
 | `count` | Numeric repeat-count commands, such as moving a window several positions. |
 
-`action = "shell"` runs the command through the user's shell after the palette exits. Use it for quick side effects that do not need visible output, such as copying text to a tmux buffer or opening a URL. Avoid it for commands that print output you need to read, because they run in the shell context left by the commander popup.
+`action = "shell"` runs the command through the user's shell. By default the palette exits before dispatch, which is best for quick side effects such as copying text to a tmux buffer or opening a URL. If the command produces output you want to read, add `show_output = true` so commander stays open and renders stdout/stderr in an internal output view.
 
 ```toml
 action = "shell"
 command = "open https://github.com"
+```
+
+`show_output = true` is intended for non-interactive `tmux` or `shell` commands. Press `Esc` or `q` to return to the command list.
+
+```toml
+action = "shell"
+command = "date"
+show_output = true
 ```
 
 `action = "current_shell"` sends the command text to the active tmux pane and presses Enter after the palette exits. Use it when you want output to stay in the pane's normal shell history and scrollback.

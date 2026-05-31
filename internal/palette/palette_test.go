@@ -400,6 +400,37 @@ func TestSelectCommandClampsCursorPastEnd(t *testing.T) {
 	}
 }
 
+func TestShowOutputCommandStaysInPalette(t *testing.T) {
+	model := New(
+		[]config.Command{{Title: "Show Date", Action: "shell", Command: "printf output", ShowOutput: true}},
+		theme.Resolve("shades-of-purple"),
+		nil,
+		true,
+		true,
+		nil,
+		"",
+		"",
+	)
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := next.(Model)
+	if updated.mode != modeMessage {
+		t.Fatalf("mode = %v, want message", updated.mode)
+	}
+	if updated.selected != nil {
+		t.Fatal("show output command should not select external action")
+	}
+	if cmd == nil {
+		t.Fatal("expected output command")
+	}
+	msg := cmd()
+	next, _ = updated.Update(msg)
+	updated = next.(Model)
+	if updated.messageTitle != "Show Date" || updated.messageBody != "output" {
+		t.Fatalf("message = %q %q, want Show Date/output", updated.messageTitle, updated.messageBody)
+	}
+}
+
 func TestSelectCommandClampsNegativeCursor(t *testing.T) {
 	model := New(
 		[]config.Command{
