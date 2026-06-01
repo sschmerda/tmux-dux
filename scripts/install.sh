@@ -58,12 +58,12 @@ verify_checksum() {
     echo "tmux-commander: checksum not found for $archive" >&2
     exit 1
   fi
-  if command -v sha256sum >/dev/null 2>&1; then
-    (cd "$tmpdir" && printf '%s\n' "$expected" | sha256sum -c >/dev/null)
-    return
-  fi
   if command -v shasum >/dev/null 2>&1; then
     (cd "$tmpdir" && printf '%s\n' "$expected" | shasum -a 256 -c >/dev/null)
+    return
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    (cd "$tmpdir" && printf '%s\n' "$expected" | sha256sum -c >/dev/null)
     return
   fi
   echo "tmux-commander: missing required command: sha256sum or shasum" >&2
