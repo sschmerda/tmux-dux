@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/sschmerda/tmux-commander/internal/config"
-	"github.com/sschmerda/tmux-commander/internal/fuzzy"
-	"github.com/sschmerda/tmux-commander/internal/theme"
-	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-dux/internal/config"
+	"github.com/sschmerda/tmux-dux/internal/fuzzy"
+	"github.com/sschmerda/tmux-dux/internal/theme"
+	"github.com/sschmerda/tmux-dux/internal/tmuxcmd"
 )
 
 func TestNextCategoryIndexMovesToFirstCommandInNextCategory(t *testing.T) {
@@ -237,7 +237,7 @@ func TestConfigPathMessageShowsPath(t *testing.T) {
 		true,
 		true,
 		nil,
-		"/tmp/tmux-commander/config.toml",
+		"/tmp/tmux-dux/config.toml",
 		"",
 	)
 	model.width = 80
@@ -245,7 +245,7 @@ func TestConfigPathMessageShowsPath(t *testing.T) {
 	model.openMessage(config.InternalConfigPath)
 
 	view := model.viewMessage()
-	if !strings.Contains(view, "/tmp/tmux-commander/config.toml") {
+	if !strings.Contains(view, "/tmp/tmux-dux/config.toml") {
 		t.Fatalf("view did not include config path: %q", view)
 	}
 }
@@ -283,7 +283,7 @@ func TestMessageLineHighlightsPaths(t *testing.T) {
 	model.width = 80
 	model.height = 24
 
-	path := model.renderMessageLine("/tmp/tmux-commander/config.toml")
+	path := model.renderMessageLine("/tmp/tmux-dux/config.toml")
 	plain := model.renderMessageLine("Recent command history cleared:")
 	if path == plain {
 		t.Fatal("path and plain message rendered identically")

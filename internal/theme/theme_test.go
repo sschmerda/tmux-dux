@@ -12,7 +12,7 @@ func TestResolveDefaultsToShadesOfPurple(t *testing.T) {
 func TestResolveKnownThemes(t *testing.T) {
 	for _, name := range Names() {
 		got := Resolve(name)
-		if got.Name == "" || got.Background == "" || got.Title == "" || got.CommanderBorder == "" || got.PromptBorder == "" || got.Prompt == "" || got.Query == "" || got.SearchBG == "" || got.SearchFG == "" || got.Empty == "" || got.ChipBG == "" || got.SelectedChip == "" || got.SelectedChipBG == "" || got.Glyph == "" || got.MatchFG == "" || got.SelectedMatchFG == "" || got.SelectedBG == "" {
+		if got.Name == "" || got.Background == "" || got.Title == "" || got.PaletteBorder == "" || got.PromptBorder == "" || got.Prompt == "" || got.Query == "" || got.SearchBG == "" || got.SearchFG == "" || got.Empty == "" || got.ChipBG == "" || got.SelectedChip == "" || got.SelectedChipBG == "" || got.Glyph == "" || got.MatchFG == "" || got.SelectedMatchFG == "" || got.SelectedBG == "" {
 			t.Fatalf("theme %q resolved incompletely: %#v", name, got)
 		}
 	}
@@ -41,7 +41,7 @@ func TestResolveWithCustomUsesCustomFields(t *testing.T) {
 	got := ResolveWithCustom("custom", Theme{
 		Background:      "#111111",
 		Title:           "#eeeeee",
-		CommanderBorder: "#ddddff",
+		PaletteBorder:   "#ddddff",
 		PromptBorder:    "#ccccff",
 		Prompt:          "#aaaaaa",
 		Query:           "#bbbbbb",
@@ -59,7 +59,7 @@ func TestResolveWithCustomUsesCustomFields(t *testing.T) {
 	if got.Name != "custom" {
 		t.Fatalf("theme = %q, want custom", got.Name)
 	}
-	if got.Background != "#111111" || got.Title != "#eeeeee" || got.CommanderBorder != "#ddddff" || got.PromptBorder != "#ccccff" || got.Prompt != "#aaaaaa" || got.Query != "#bbbbbb" || got.SearchBG != "#444444" || got.SearchFG != "#eeeeff" || got.Empty != "#cccccc" || got.ChipBG != "#222222" || got.SelectedChip != "#ffccaa" || got.SelectedChipBG != "#332211" || got.Glyph != "#dddddd" || got.MatchFG != "#ffeeaa" || got.SelectedMatchFG != "#aaffee" || got.SelectedBG != "#333333" {
+	if got.Background != "#111111" || got.Title != "#eeeeee" || got.PaletteBorder != "#ddddff" || got.PromptBorder != "#ccccff" || got.Prompt != "#aaaaaa" || got.Query != "#bbbbbb" || got.SearchBG != "#444444" || got.SearchFG != "#eeeeff" || got.Empty != "#cccccc" || got.ChipBG != "#222222" || got.SelectedChip != "#ffccaa" || got.SelectedChipBG != "#332211" || got.Glyph != "#dddddd" || got.MatchFG != "#ffeeaa" || got.SelectedMatchFG != "#aaffee" || got.SelectedBG != "#333333" {
 		t.Fatalf("custom fields were not applied: %#v", got)
 	}
 	if got.Header != Default().Header {

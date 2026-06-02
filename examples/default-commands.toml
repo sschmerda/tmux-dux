@@ -490,7 +490,7 @@ command = "git branch --show-current | tmux load-buffer -w -"
 
 [[commands]]
 title = "Show Date"
-description = "Show the current date inside commander"
+description = "Show the current date inside the palette"
 category = "Shell"
 aliases = ["date"]
 icon = "󰃰"
@@ -500,7 +500,7 @@ show_output = true
 
 [[commands]]
 title = "Git Branch"
-description = "Show current git branch inside commander"
+description = "Show current git branch inside the palette"
 category = "Git"
 aliases = ["branch"]
 icon = "󰊢"
@@ -510,7 +510,7 @@ show_output = true
 
 [[commands]]
 title = "Git Remote"
-description = "Show git remotes inside commander"
+description = "Show git remotes inside the palette"
 category = "Git"
 aliases = ["remote"]
 icon = "󰊢"

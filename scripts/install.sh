@@ -1,14 +1,14 @@
 #!/bin/sh
 set -eu
 
-REPO="${TMUX_COMMANDER_REPO:-sschmerda/tmux-commander}"
-VERSION="${TMUX_COMMANDER_VERSION:-latest}"
-INSTALL_DIR="${TMUX_COMMANDER_INSTALL_DIR:-$HOME/.local/bin}"
-BINARY_NAME="tmux-commander"
+REPO="${TMUX_DUX_REPO:-sschmerda/tmux-dux}"
+VERSION="${TMUX_DUX_VERSION:-latest}"
+INSTALL_DIR="${TMUX_DUX_INSTALL_DIR:-$HOME/.local/bin}"
+BINARY_NAME="tmux-dux"
 
 need() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "tmux-commander: missing required command: $1" >&2
+    echo "tmux-dux: missing required command: $1" >&2
     exit 1
   fi
 }
@@ -18,7 +18,7 @@ detect_os() {
     Darwin) echo "darwin" ;;
     Linux) echo "linux" ;;
     *)
-      echo "tmux-commander: unsupported OS: $(uname -s)" >&2
+      echo "tmux-dux: unsupported OS: $(uname -s)" >&2
       exit 1
       ;;
   esac
@@ -29,7 +29,7 @@ detect_arch() {
     x86_64 | amd64) echo "amd64" ;;
     arm64 | aarch64) echo "arm64" ;;
     *)
-      echo "tmux-commander: unsupported architecture: $(uname -m)" >&2
+      echo "tmux-dux: unsupported architecture: $(uname -m)" >&2
       exit 1
       ;;
   esac
@@ -46,7 +46,7 @@ download() {
     wget -qO "$output" "$url"
     return
   fi
-  echo "tmux-commander: missing required command: curl or wget" >&2
+  echo "tmux-dux: missing required command: curl or wget" >&2
   exit 1
 }
 
@@ -55,7 +55,7 @@ verify_checksum() {
   archive="$2"
   expected="$(grep "  ${archive}$" "$checksum_file" || true)"
   if [ -z "$expected" ]; then
-    echo "tmux-commander: checksum not found for $archive" >&2
+    echo "tmux-dux: checksum not found for $archive" >&2
     exit 1
   fi
   if command -v shasum >/dev/null 2>&1; then
@@ -66,7 +66,7 @@ verify_checksum() {
     (cd "$tmpdir" && printf '%s\n' "$expected" | sha256sum -c >/dev/null)
     return
   fi
-  echo "tmux-commander: missing required command: sha256sum or shasum" >&2
+  echo "tmux-dux: missing required command: sha256sum or shasum" >&2
   exit 1
 }
 
@@ -103,4 +103,4 @@ tar -xzf "$tmpdir/$archive" -C "$tmpdir"
 mkdir -p "$INSTALL_DIR"
 install -m 0755 "$tmpdir/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
 
-echo "tmux-commander installed to $INSTALL_DIR/$BINARY_NAME"
+echo "tmux-dux installed to $INSTALL_DIR/$BINARY_NAME"

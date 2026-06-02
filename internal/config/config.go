@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/sschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-dux/internal/theme"
 )
 
 type UI struct {
@@ -110,7 +110,7 @@ func Path() (string, error) {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "tmux-commander", "config.toml"), nil
+	return filepath.Join(base, "tmux-dux", "config.toml"), nil
 }
 
 func CommandsPath(configPath string) string {

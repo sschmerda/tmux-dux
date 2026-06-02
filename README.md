@@ -1,43 +1,43 @@
-# tmux-commander
+# tmux-dux
 
-`tmux-commander` is a fast Go command palette for tmux. It is designed to run as a single executable inside a tmux popup, filter commands with a fuzzy search, exit cleanly, and then dispatch the selected tmux, shell, popup, or current-pane shell action.
+`tmux-dux` is a fast Go command palette for tmux. It is designed to run as a single executable inside a tmux popup, filter commands with a fuzzy search, exit cleanly, and then dispatch the selected tmux, shell, popup, or current-pane shell action.
 
 ## Install
 
 With TPM:
 
 ```tmux
-set -g @plugin 'sschmerda/tmux-commander'
-set -g @tmux-commander-key 'Space'
+set -g @plugin 'sschmerda/tmux-dux'
+set -g @tmux-dux-key 'Space'
 ```
 
-Press `prefix` + `I` to install. The TPM plugin downloads the latest release binary into the plugin directory. `@tmux-commander-key` is optional; no key is bound unless you set it explicitly. The example above binds `prefix` + `Space` to `tmux-commander popup`.
+Press `prefix` + `I` to install. The TPM plugin downloads the latest release binary into the plugin directory. `@tmux-dux-key` is optional; no key is bound unless you set it explicitly. The example above binds `prefix` + `Space` to `tmux-dux popup`.
 
 For a global binding that does not require the tmux prefix, bind it manually after the TPM plugin declaration:
 
 ```tmux
-bind-key -n C-Space run-shell '"${TMUX_COMMANDER_BIN:-tmux-commander}" popup'
+bind-key -n C-Space run-shell '"${TMUX_DUX_BIN:-tmux-dux}" popup'
 ```
 
 With the release installer:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/sschmerda/tmux-commander/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/sschmerda/tmux-dux/main/scripts/install.sh | sh
 ```
 
 Install a specific release:
 
 ```sh
-TMUX_COMMANDER_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/sschmerda/tmux-commander/main/scripts/install.sh | sh
+TMUX_DUX_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/sschmerda/tmux-dux/main/scripts/install.sh | sh
 ```
 
-The installer supports macOS and Linux on `amd64` and `arm64`, matching the precompiled GitHub release archives. It installs to `~/.local/bin` by default. Override that with `TMUX_COMMANDER_INSTALL_DIR`.
+The installer supports macOS and Linux on `amd64` and `arm64`, matching the precompiled GitHub release archives. It installs to `~/.local/bin` by default. Override that with `TMUX_DUX_INSTALL_DIR`.
 
 Verify a downloaded release archive with GitHub artifact attestations when the release was built from a public repository:
 
 ```sh
-gh attestation verify tmux-commander_linux_arm64.tar.gz \
-  --repo sschmerda/tmux-commander
+gh attestation verify tmux-dux_linux_arm64.tar.gz \
+  --repo sschmerda/tmux-dux
 ```
 
 The installer verifies SHA256 checksums automatically. Artifact attestation verification additionally proves that a release archive was produced by this repository's GitHub Actions release workflow. GitHub does not currently persist attestations for user-owned private repositories, so the release workflow skips attestation until the repository is public.
@@ -45,29 +45,29 @@ The installer verifies SHA256 checksums automatically. Artifact attestation veri
 Build from source:
 
 ```sh
-go install github.com/sschmerda/tmux-commander/cmd/tmux-commander@latest
+go install github.com/sschmerda/tmux-dux/cmd/tmux-dux@latest
 ```
 
 Local development build:
 
 ```sh
-go build -o bin/tmux-commander ./cmd/tmux-commander
+go build -o bin/tmux-dux ./cmd/tmux-dux
 ```
 
 The only runtime dependency is `tmux` itself. Optional commands such as `lazygit` or `btop` are only needed if you use those entries.
 
 ## tmux Binding
 
-Recommended binding when installing outside TPM. This lets `tmux-commander` read `[ui].width` and `[ui].height` from TOML:
+Recommended binding when installing outside TPM. This lets `tmux-dux` read `[ui].width` and `[ui].height` from TOML:
 
 ```tmux
-bind -n C-Space run-shell "tmux-commander popup"
+bind -n C-Space run-shell "tmux-dux popup"
 ```
 
 Prefix binding variant:
 
 ```tmux
-bind p run-shell "tmux-commander popup"
+bind p run-shell "tmux-dux popup"
 ```
 
 Reload tmux config:
@@ -80,17 +80,17 @@ tmux source-file ~/.tmux.conf
 
 Configuration is TOML and is loaded from:
 
-1. `$XDG_CONFIG_HOME/tmux-commander/config.toml`
-2. `~/.config/tmux-commander/config.toml`
+1. `$XDG_CONFIG_HOME/tmux-dux/config.toml`
+2. `~/.config/tmux-dux/config.toml`
 
 Command definitions may either live inline in `config.toml` or in a sibling file:
 
-1. `$XDG_CONFIG_HOME/tmux-commander/commands.toml`
-2. `~/.config/tmux-commander/commands.toml`
+1. `$XDG_CONFIG_HOME/tmux-dux/commands.toml`
+2. `~/.config/tmux-dux/commands.toml`
 
 If `commands.toml` exists, its `[[commands]]` replace any inline `[[commands]]` from `config.toml`. This keeps app settings small while allowing long command catalogs. `commands.toml` may only define `[[commands]]`; keep `[ui]`, `[keys]`, and `[custom_theme]` in `config.toml`.
 
-If no config file exists, built-in app defaults are used. If no command definitions exist, only the built-in `Settings tmux-commander` commands are shown. Workflow commands live in user config, with a full example catalog in `examples/default-commands.toml`.
+If no config file exists, built-in app defaults are used. If no command definitions exist, only the built-in `Settings tmux-dux` commands are shown. Workflow commands live in user config, with a full example catalog in `examples/default-commands.toml`.
 
 Full example blueprints are available in this repository:
 
@@ -99,21 +99,21 @@ Full example blueprints are available in this repository:
 
 Use them as references for:
 
-- `$XDG_CONFIG_HOME/tmux-commander/config.toml`
-- `$XDG_CONFIG_HOME/tmux-commander/commands.toml`
+- `$XDG_CONFIG_HOME/tmux-dux/config.toml`
+- `$XDG_CONFIG_HOME/tmux-dux/commands.toml`
 
 or, without `XDG_CONFIG_HOME`:
 
-- `~/.config/tmux-commander/config.toml`
-- `~/.config/tmux-commander/commands.toml`
+- `~/.config/tmux-dux/config.toml`
+- `~/.config/tmux-dux/commands.toml`
 
 Create empty config files explicitly:
 
 ```sh
-tmux-commander config init
-tmux-commander config init --config
-tmux-commander config init --commands
-tmux-commander config init --script_dir
+tmux-dux config init
+tmux-dux config init --config
+tmux-dux config init --commands
+tmux-dux config init --script_dir
 ```
 
 `config init` creates the config directory when needed. Without flags, it creates empty `config.toml` and `commands.toml` files plus an empty `scripts/` directory for script-backed custom commands. It fails without creating anything if any selected target already exists.
@@ -190,21 +190,21 @@ command = "new-session -d -s {{input}}"
 prompt = "session_name"
 ```
 
-`width` and `height` control the commander popup itself when launched with `tmux-commander popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
+`width` and `height` control the palette popup itself when launched with `tmux-dux popup`. `popup_width` and `popup_height` under `[ui]` control popups opened by command actions. Individual popup commands can override those defaults with their own `popup_width` and `popup_height`.
 
 `icon` is rendered as a command glyph to the left of the command title. Omit `icon`, set it to an empty string, or set `glyphs = false` in `[ui]` to hide glyphs.
 
-The commander popup is launched without a native tmux border and draws its own themed border. The `border` setting is retained for popup actions and future launcher options.
+The palette popup is launched without a native tmux border and draws its own themed border. The `border` setting is retained for popup actions and future launcher options.
 
 `[ui]` fields:
 
 | Field | Default | Description |
 | --- | --- | --- |
-| `width` | `"40%"` | Commander popup width when launched with `tmux-commander popup`. |
-| `height` | `"80%"` | Commander popup height when launched with `tmux-commander popup`. |
+| `width` | `"40%"` | Palette popup width when launched with `tmux-dux popup`. |
+| `height` | `"80%"` | Palette popup height when launched with `tmux-dux popup`. |
 | `popup_width` | `"80%"` | Default width for spawned `popup` command actions. |
 | `popup_height` | `"80%"` | Default height for spawned `popup` command actions. |
-| `border` | `true` | Retained for popup action behavior and future launcher options. The commander currently draws its own border. |
+| `border` | `true` | Retained for popup action behavior and future launcher options. The palette currently draws its own border. |
 | `theme` | `"shades-of-purple"` | Built-in theme name, or `"custom"` to use `[custom_theme]`. |
 | `glyphs` | `true` | Enables command glyphs from `[[commands]].icon`. |
 | `show_description` | `true` | Shows command descriptions next to command titles. Set to `false` for a denser command list. |
@@ -242,7 +242,7 @@ Key names are normalized, so `ctrl-y` and `ctrl+y` are equivalent.
 | `action` | Yes | Dispatch type. Must be `tmux`, `shell`, `popup`, or `current_shell`. |
 | `command` | Yes | Command string used by the selected `action`. |
 | `prompt` | No | Built-in in-popup input prompt. Supported values: `session_name`, `window_name`, `target_index`, `file_path`, `command`, `search_query`, `count`. |
-| `show_output` | No | Run a non-interactive `tmux` or `shell` command inside commander and show stdout/stderr in a themed output view. |
+| `show_output` | No | Run a non-interactive `tmux` or `shell` command inside the palette and show stdout/stderr in a themed output view. |
 | `popup_width` | No | Per-command width override for `popup` actions. |
 | `popup_height` | No | Per-command height override for `popup` actions. |
 
@@ -272,7 +272,7 @@ theme = "custom"
 [custom_theme]
 background = "#101018"
 title = "#ffffff"
-commander_border = "#ffffff"
+palette_border = "#ffffff"
 prompt_border = "#ffffff"
 header = "#ffcc66"
 muted = "#7c7f93"
@@ -299,9 +299,9 @@ Custom theme fields:
 
 | Field | Controls |
 | --- | --- |
-| `background` | Main commander background and spawned popup background. |
+| `background` | Main palette background and spawned popup background. |
 | `title` | Command titles and title-like text. |
-| `commander_border` | Outer commander frame and spawned popup border. |
+| `palette_border` | Outer palette frame and spawned popup border. |
 | `prompt_border` | Search prompt box border. |
 | `header` | Category headers and normal fuzzy match highlights. |
 | `muted` | Secondary muted UI text. |
@@ -324,17 +324,17 @@ Custom theme fields:
 List valid theme names from the binary:
 
 ```sh
-tmux-commander themes
+tmux-dux themes
 ```
 
-The built-in `Preview Themes` palette command opens an in-app preview in the current popup. Use `Up` / `Down` or `Left` / `Right` to cycle themes, then `Enter` or `Esc` to return to the command list. The selected preview theme stays active until this `tmux-commander` popup exits, including for popup actions launched from that session. The preview does not write config; it shows the `theme = "..."` value to set permanently.
+The built-in `Preview Themes` palette command opens an in-app preview in the current popup. Use `Up` / `Down` or `Left` / `Right` to cycle themes, then `Enter` or `Esc` to return to the command list. The selected preview theme stays active until this `tmux-dux` popup exits, including for popup actions launched from that session. The preview does not write config; it shows the `theme = "..."` value to set permanently.
 
 ## Recent Commands
 
 When `[ui].recent_commands` is enabled, selecting a command writes a bounded history file:
 
-1. `$XDG_STATE_HOME/tmux-commander/history.toml`
-2. `~/.local/state/tmux-commander/history.toml`
+1. `$XDG_STATE_HOME/tmux-dux/history.toml`
+2. `~/.local/state/tmux-dux/history.toml`
 
 The file is created lazily after the first command selection. It is capped to `[ui].recent_limit`, so it cannot grow beyond the configured number of entries.
 
@@ -362,7 +362,7 @@ The same history file also stores recent commands launched from tmux-command mod
 
 Each command must define an `action` and a `command`.
 
-User-defined actions are terminal handoffs. Selecting a `tmux`, `shell`, `popup`, or `current_shell` command exits the commander first, then dispatches the command. This keeps tmux prompts and interactive terminal programs from competing with the Bubble Tea input loop.
+User-defined actions are terminal handoffs. Selecting a `tmux`, `shell`, `popup`, or `current_shell` command exits the palette first, then dispatches the command. This keeps tmux prompts and interactive terminal programs from competing with the Bubble Tea input loop.
 
 `action = "tmux"` runs `tmux <command>` after the palette exits. The `command` value should omit the leading `tmux`.
 
@@ -371,7 +371,7 @@ action = "tmux"
 command = "split-window -h -c '#{pane_current_path}'"
 ```
 
-Commands may define `prompt` to collect one value inside the commander popup before dispatch. The input screen uses the same styling as the tmux-command argument prompt.
+Commands may define `prompt` to collect one value inside the palette popup before dispatch. The input screen uses the same styling as the tmux-command argument prompt.
 
 ```toml
 action = "tmux"
@@ -393,7 +393,7 @@ Built-in prompt names:
 | `search_query` | Search commands such as `find-window`. |
 | `count` | Numeric repeat-count commands, such as moving a window several positions. |
 
-`action = "shell"` runs the command through the user's shell. By default the palette exits before dispatch, which is best for quick side effects such as copying text to a tmux buffer or opening a URL. If the command produces output you want to read, add `show_output = true` so commander stays open and renders stdout/stderr in an internal output view.
+`action = "shell"` runs the command through the user's shell. By default the palette exits before dispatch, which is best for quick side effects such as copying text to a tmux buffer or opening a URL. If the command produces output you want to read, add `show_output = true` so the palette stays open and renders stdout/stderr in an internal output view.
 
 ```toml
 action = "shell"
@@ -424,13 +424,13 @@ popup_width = "95%"
 popup_height = "90%"
 ```
 
-Popup actions inherit the active theme's tmux popup style. `background` / `query` are used for the popup body, and `commander_border` is used for the popup border foreground. Full-screen terminal apps may still draw their own colors.
+Popup actions inherit the active theme's tmux popup style. `background` / `query` are used for the popup body, and `palette_border` is used for the popup border foreground. Full-screen terminal apps may still draw their own colors.
 
 Popup actions start in the active tmux pane directory via `#{pane_current_path}`.
 
 Interactive tmux prompts are intentionally dispatched after the Bubble Tea UI exits to avoid nested input conflicts.
 
-Built-in internal commands manage `tmux-commander` itself. In-app commands such as `Preview Themes`, `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup and return to the same query, selection, and scroll position. `Reload Config` reloads TOML and restarts the palette inside the same popup while preserving that position. `Open / Edit Config` is the exception: it exits the commander and opens `$EDITOR` in a tmux popup because the editor is an external interactive program.
+Built-in internal commands manage `tmux-dux` itself. In-app commands such as `Preview Themes`, `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the palette popup and return to the same query, selection, and scroll position. `Reload Config` reloads TOML and restarts the palette inside the same popup while preserving that position. `Open / Edit Config` is the exception: it exits the palette and opens `$EDITOR` in a tmux popup because the editor is an external interactive program.
 
 ## Controls
 
@@ -445,11 +445,11 @@ Built-in internal commands manage `tmux-commander` itself. In-app commands such 
 
 The `Show Controls` internal command displays the active key bindings after user config has been applied.
 
-In tmux-command mode, the palette fuzzy-searches tmux command names. Selecting an argument-capable tmux command opens an argument input view inside commander. Press `Enter` from that view to run `tmux <command> <arguments>`, or `Esc` to return to the tmux command list without losing the previous selection.
+In tmux-command mode, the palette fuzzy-searches tmux command names. Selecting an argument-capable tmux command opens an argument input view inside the palette. Press `Enter` from that view to run `tmux <command> <arguments>`, or `Esc` to return to the tmux command list without losing the previous selection.
 
 In the theme preview view, use `Up` / `Down` or `Left` / `Right` to preview themes. Press `Enter` or `Esc` to return to the command list at the previous position.
 
-Internal message views such as `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the commander popup. Press `c` or `y` to copy the message body through `tmux load-buffer -w -`; press `Esc` or `q` to return to the command list at the previous position.
+Internal message views such as `Show Controls`, `Clear Recent Commands`, and `List Config Path` stay inside the palette popup. Press `c` or `y` to copy the message body through `tmux load-buffer -w -`; press `Esc` or `q` to return to the command list at the previous position.
 
 When the query is empty, commands are grouped by recent use and category. While filtering, category headers are hidden and results are sorted by fuzzy score with a small recency boost. Multi-token searches such as `split pane` are supported.
 
@@ -480,30 +480,30 @@ When the query is empty, commands are grouped by recent use and category. While 
 
 This project is inspired by [`eduwass/tmux-palette`](https://github.com/eduwass/tmux-palette), which provides a Raycast-style tmux command palette with Bun, JSON configuration, popup tools, custom palettes, themes, and shell-powered palette sources.
 
-The deliberate differences in `tmux-commander` are:
+The deliberate differences in `tmux-dux` are:
 
 - Go single-binary distribution instead of a Bun project checkout.
 - TOML configuration instead of JSON.
 - A smaller first surface area focused on tmux commands, shell commands, and popup commands.
 - Package boundaries for config, fuzzy matching, action dispatch, palette UI, and tmux helpers.
 
-`tmux-palette` currently has broader customization features such as custom palettes, theme selection, and JSON-powered plugin sources. `tmux-commander` starts with less surface area and prioritizes low-friction native binary installation, including TPM installation backed by precompiled release binaries.
+`tmux-palette` currently has broader customization features such as custom palettes, theme selection, and JSON-powered plugin sources. `tmux-dux` starts with less surface area and prioritizes low-friction native binary installation, including TPM installation backed by precompiled release binaries.
 
 ## Development
 
 ```sh
 go test ./...
-go run ./cmd/tmux-commander
-go run ./cmd/tmux-commander config init
-go run ./cmd/tmux-commander themes
-go run ./cmd/tmux-commander version
-go build -o bin/tmux-commander ./cmd/tmux-commander
+go run ./cmd/tmux-dux
+go run ./cmd/tmux-dux config init
+go run ./cmd/tmux-dux themes
+go run ./cmd/tmux-dux version
+go build -o bin/tmux-dux ./cmd/tmux-dux
 ```
 
 Run inside tmux for a realistic manual test:
 
 ```sh
-./bin/tmux-commander popup
+./bin/tmux-dux popup
 ```
 
 ## Release Builds
@@ -526,21 +526,21 @@ goreleaser release --snapshot --clean
 Verify a published release archive with GitHub artifact attestations when the release was built from a public repository:
 
 ```sh
-gh attestation verify tmux-commander_linux_arm64.tar.gz \
-  --repo sschmerda/tmux-commander
+gh attestation verify tmux-dux_linux_arm64.tar.gz \
+  --repo sschmerda/tmux-dux
 ```
 
 Build a local binary without GoReleaser:
 
 ```sh
-go build -trimpath -ldflags="-s -w" -o bin/tmux-commander ./cmd/tmux-commander
+go build -trimpath -ldflags="-s -w" -o bin/tmux-dux ./cmd/tmux-dux
 ```
 
 Example cross-compile commands:
 
 ```sh
-GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/tmux-commander_darwin_arm64 ./cmd/tmux-commander
-GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/tmux-commander_linux_amd64 ./cmd/tmux-commander
+GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/tmux-dux_darwin_arm64 ./cmd/tmux-dux
+GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/tmux-dux_linux_amd64 ./cmd/tmux-dux
 ```
 
 Homebrew can be added later by extending `.goreleaser.yaml` with a `brews` publisher that writes to a tap repository.

@@ -8,7 +8,7 @@ const (
 	InternalEditConfig   = "edit-config"
 	InternalReloadConfig = "reload-config"
 
-	settingsCategory = "Settings tmux-commander"
+	settingsCategory = "Settings tmux-dux"
 )
 
 func DefaultCommands() []Command {
@@ -36,7 +36,7 @@ func SettingsCommands() []Command {
 		},
 		{
 			Title:       "Show Controls",
-			Description: "Show tmux-commander controls and hotkeys",
+			Description: "Show tmux-dux controls and hotkeys",
 			Category:    settingsCategory,
 			Aliases:     []string{"help"},
 			Icon:        "󰋖",
@@ -52,7 +52,7 @@ func SettingsCommands() []Command {
 		},
 		{
 			Title:       "Reload Config",
-			Description: "Reload tmux-commander config by reopening the palette",
+			Description: "Reload tmux-dux config by reopening the palette",
 			Category:    settingsCategory,
 			Aliases:     []string{"rc"},
 			Icon:        "󰑐",

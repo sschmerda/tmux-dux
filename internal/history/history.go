@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/sschmerda/tmux-commander/internal/config"
-	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-dux/internal/config"
+	"github.com/sschmerda/tmux-dux/internal/tmuxcmd"
 )
 
 const version = 1
@@ -47,7 +47,7 @@ func Path() (string, error) {
 		}
 		base = filepath.Join(home, ".local", "state")
 	}
-	return filepath.Join(base, "tmux-commander", "history.toml"), nil
+	return filepath.Join(base, "tmux-dux", "history.toml"), nil
 }
 
 func Load(path string) (File, error) {

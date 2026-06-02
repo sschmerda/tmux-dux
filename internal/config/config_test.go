@@ -66,7 +66,7 @@ previous_category = "ctrl-p"
 [custom_theme]
 background = "#111111"
 title = "#eeeeee"
-commander_border = "#ddddff"
+palette_border = "#ddddff"
 prompt_border = "#ccccff"
 prompt = "#aaaaaa"
 query = "#bbbbbb"
@@ -133,7 +133,7 @@ popup_height = "85%"
 	if cfg.Keys.TmuxMode != "ctrl+y" || cfg.Keys.MoveUp != "alt+k" || cfg.Keys.MoveDown != "alt+j" || cfg.Keys.ScrollUp != "ctrl+k" || cfg.Keys.ScrollDown != "ctrl+j" || cfg.Keys.HalfPageUp != "ctrl+b" || cfg.Keys.HalfPageDown != "ctrl+f" || cfg.Keys.NextCategory != "ctrl+n" || cfg.Keys.PreviousCategory != "ctrl+p" {
 		t.Fatalf("keys = %#v", cfg.Keys)
 	}
-	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.CommanderBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
+	if cfg.CustomTheme.Background != "#111111" || cfg.CustomTheme.Title != "#eeeeee" || cfg.CustomTheme.PaletteBorder != "#ddddff" || cfg.CustomTheme.PromptBorder != "#ccccff" || cfg.CustomTheme.Prompt != "#aaaaaa" || cfg.CustomTheme.Query != "#bbbbbb" || cfg.CustomTheme.SearchBG != "#444444" || cfg.CustomTheme.SearchFG != "#eeeeff" || cfg.CustomTheme.Empty != "#cccccc" || cfg.CustomTheme.ChipBG != "#222222" || cfg.CustomTheme.SelectedChip != "#ffccaa" || cfg.CustomTheme.SelectedChipBG != "#332211" || cfg.CustomTheme.Glyph != "#dddddd" || cfg.CustomTheme.MatchFG != "#ffeeaa" || cfg.CustomTheme.SelectedMatchFG != "#aaffee" || cfg.CustomTheme.SelectedBG != "#333333" {
 		t.Fatalf("custom theme = %#v", cfg.CustomTheme)
 	}
 	if cfg.Commands[0].Action != "popup" || cfg.Commands[0].Command != "tail -f {{input}}" {
@@ -325,7 +325,7 @@ func TestPathUsesXDGConfigHome(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Path returned error: %v", err)
 	}
-	want := filepath.Join("/tmp/config-root", "tmux-commander", "config.toml")
+	want := filepath.Join("/tmp/config-root", "tmux-dux", "config.toml")
 	if path != want {
 		t.Fatalf("path = %q, want %q", path, want)
 	}
@@ -384,7 +384,7 @@ func TestLoadFileRejectsReservedSettingsCategory(t *testing.T) {
 	input := `
 [[commands]]
 title = "Custom Settings"
-category = "Settings tmux-commander"
+category = "Settings tmux-dux"
 action = "shell"
 command = "echo no"
 `
@@ -405,7 +405,7 @@ func TestLoadFileRejectsReservedSettingsCategoryCaseInsensitive(t *testing.T) {
 	input := `
 [[commands]]
 title = "Custom Settings"
-category = "settings tmux-commander"
+category = "settings tmux-dux"
 action = "shell"
 command = "echo no"
 `

@@ -27,7 +27,7 @@ previous_category = "shift+tab"
 [custom_theme]
 background = "#2d2b55"
 title = "#ffffff"
-commander_border = "#d7d3ff"
+palette_border = "#d7d3ff"
 prompt_border = "#d7d3ff"
 header = "#fad000"
 muted = "#6e6a86"

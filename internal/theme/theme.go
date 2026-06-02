@@ -6,7 +6,7 @@ type Theme struct {
 	Name            string `toml:"name"`
 	Background      string `toml:"background"`
 	Title           string `toml:"title"`
-	CommanderBorder string `toml:"commander_border"`
+	PaletteBorder   string `toml:"palette_border"`
 	PromptBorder    string `toml:"prompt_border"`
 	Header          string `toml:"header"`
 	Muted           string `toml:"muted"`
@@ -38,7 +38,7 @@ func Resolve(name string) Theme {
 			Name:            "catppuccin",
 			Background:      "#1e1e2e",
 			Title:           "#cdd6f4",
-			CommanderBorder: "#cdd6f4",
+			PaletteBorder:   "#cdd6f4",
 			PromptBorder:    "#cdd6f4",
 			Header:          "#f9e2af",
 			Muted:           "#6c7086",
@@ -63,7 +63,7 @@ func Resolve(name string) Theme {
 			Name:            "tokyonight",
 			Background:      "#1a1b26",
 			Title:           "#c0caf5",
-			CommanderBorder: "#c0caf5",
+			PaletteBorder:   "#c0caf5",
 			PromptBorder:    "#c0caf5",
 			Header:          "#e0af68",
 			Muted:           "#565f89",
@@ -88,7 +88,7 @@ func Resolve(name string) Theme {
 			Name:            "rosepine",
 			Background:      "#191724",
 			Title:           "#e0def4",
-			CommanderBorder: "#e0def4",
+			PaletteBorder:   "#e0def4",
 			PromptBorder:    "#e0def4",
 			Header:          "#f6c177",
 			Muted:           "#6e6a86",
@@ -113,7 +113,7 @@ func Resolve(name string) Theme {
 			Name:            "kanagawa",
 			Background:      "#1f1f28",
 			Title:           "#dcd7ba",
-			CommanderBorder: "#dcd7ba",
+			PaletteBorder:   "#dcd7ba",
 			PromptBorder:    "#dcd7ba",
 			Header:          "#e6c384",
 			Muted:           "#727169",
@@ -138,7 +138,7 @@ func Resolve(name string) Theme {
 			Name:            "shades-of-purple",
 			Background:      "#2d2b55",
 			Title:           "#d7d3ff",
-			CommanderBorder: "#d7d3ff",
+			PaletteBorder:   "#d7d3ff",
 			PromptBorder:    "#d7d3ff",
 			Header:          "#fad000",
 			Muted:           "#a599e9",
@@ -163,7 +163,7 @@ func Resolve(name string) Theme {
 			Name:            "solarized",
 			Background:      "#002b36",
 			Title:           "#eee8d5",
-			CommanderBorder: "#eee8d5",
+			PaletteBorder:   "#eee8d5",
 			PromptBorder:    "#eee8d5",
 			Header:          "#b58900",
 			Muted:           "#586e75",
@@ -188,7 +188,7 @@ func Resolve(name string) Theme {
 			Name:            "gruvbox",
 			Background:      "#282828",
 			Title:           "#ebdbb2",
-			CommanderBorder: "#ebdbb2",
+			PaletteBorder:   "#ebdbb2",
 			PromptBorder:    "#ebdbb2",
 			Header:          "#fabd2f",
 			Muted:           "#928374",
@@ -225,8 +225,8 @@ func ResolveWithCustom(name string, custom Theme) Theme {
 	if custom.Title != "" {
 		base.Title = custom.Title
 	}
-	if custom.CommanderBorder != "" {
-		base.CommanderBorder = custom.CommanderBorder
+	if custom.PaletteBorder != "" {
+		base.PaletteBorder = custom.PaletteBorder
 	}
 	if custom.PromptBorder != "" {
 		base.PromptBorder = custom.PromptBorder

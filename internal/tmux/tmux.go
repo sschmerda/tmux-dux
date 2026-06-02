@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sschmerda/tmux-commander/internal/theme"
+	"github.com/sschmerda/tmux-dux/internal/theme"
 )
 
 func Installed() bool {
@@ -54,7 +54,7 @@ func PopupStyle(t theme.Theme) string {
 }
 
 func PopupBorderStyle(t theme.Theme) string {
-	return style(t.CommanderBorder, t.Background)
+	return style(t.PaletteBorder, t.Background)
 }
 
 func style(fg string, bg string) string {

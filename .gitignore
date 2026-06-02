@@ -2,7 +2,7 @@
 bin/
 dist/
 build/
-/tmux-commander
+/tmux-dux
 *.exe
 *.exe~
 *.dll

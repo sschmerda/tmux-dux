@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sschmerda/tmux-commander/internal/config"
-	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-dux/internal/config"
+	"github.com/sschmerda/tmux-dux/internal/tmuxcmd"
 )
 
 func TestPathUsesXDGStateHome(t *testing.T) {
@@ -16,7 +16,7 @@ func TestPathUsesXDGStateHome(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Path returned error: %v", err)
 	}
-	want := filepath.Join("/tmp/state-root", "tmux-commander", "history.toml")
+	want := filepath.Join("/tmp/state-root", "tmux-dux", "history.toml")
 	if path != want {
 		t.Fatalf("path = %q, want %q", path, want)
 	}
@@ -30,7 +30,7 @@ func TestPathFallsBackToLocalState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Path returned error: %v", err)
 	}
-	want := filepath.Join(home, ".local", "state", "tmux-commander", "history.toml")
+	want := filepath.Join(home, ".local", "state", "tmux-dux", "history.toml")
 	if path != want {
 		t.Fatalf("path = %q, want %q", path, want)
 	}

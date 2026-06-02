@@ -17,9 +17,9 @@ func TestConfigInitWritesEmptyConfigFilesWhenNoConfigExists(t *testing.T) {
 		t.Fatalf("configInit returned error: %v", err)
 	}
 
-	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
-	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
-	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
+	configPath := filepath.Join(dir, "tmux-dux", "config.toml")
+	commandsPath := filepath.Join(dir, "tmux-dux", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-dux", "scripts")
 	configBytes, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("read config: %v", err)
@@ -47,9 +47,9 @@ func TestConfigInitWritesOnlySelectedConfigFile(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
 
-	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
-	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
-	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
+	configPath := filepath.Join(dir, "tmux-dux", "config.toml")
+	commandsPath := filepath.Join(dir, "tmux-dux", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-dux", "scripts")
 
 	var out bytes.Buffer
 	if err := configInit(&out, []string{"--config"}); err != nil {
@@ -90,9 +90,9 @@ func TestConfigInitRefusesWhenSelectedTargetExists(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
 
-	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
-	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
-	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
+	configPath := filepath.Join(dir, "tmux-dux", "config.toml")
+	commandsPath := filepath.Join(dir, "tmux-dux", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-dux", "scripts")
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
 		t.Fatalf("create config dir: %v", err)
 	}
@@ -150,9 +150,9 @@ func TestConfigInitRefusesAllWhenAnySelectedFileExists(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
 
-	configPath := filepath.Join(dir, "tmux-commander", "config.toml")
-	commandsPath := filepath.Join(dir, "tmux-commander", "commands.toml")
-	scriptsPath := filepath.Join(dir, "tmux-commander", "scripts")
+	configPath := filepath.Join(dir, "tmux-dux", "config.toml")
+	commandsPath := filepath.Join(dir, "tmux-dux", "commands.toml")
+	scriptsPath := filepath.Join(dir, "tmux-dux", "scripts")
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
 		t.Fatalf("create config dir: %v", err)
 	}

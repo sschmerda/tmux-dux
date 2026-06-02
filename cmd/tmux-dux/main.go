@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sschmerda/tmux-commander/internal/actions"
-	"github.com/sschmerda/tmux-commander/internal/config"
-	"github.com/sschmerda/tmux-commander/internal/history"
-	"github.com/sschmerda/tmux-commander/internal/palette"
-	"github.com/sschmerda/tmux-commander/internal/theme"
-	"github.com/sschmerda/tmux-commander/internal/tmux"
-	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-dux/internal/actions"
+	"github.com/sschmerda/tmux-dux/internal/config"
+	"github.com/sschmerda/tmux-dux/internal/history"
+	"github.com/sschmerda/tmux-dux/internal/palette"
+	"github.com/sschmerda/tmux-dux/internal/theme"
+	"github.com/sschmerda/tmux-dux/internal/tmux"
+	"github.com/sschmerda/tmux-dux/internal/tmuxcmd"
 )
 
 var (
@@ -30,19 +30,19 @@ func main() {
 			return
 		}
 		if os.Args[1] == "version" || os.Args[1] == "--version" || os.Args[1] == "-v" {
-			fmt.Printf("tmux-commander %s (%s, %s)\n", version, commit, date)
+			fmt.Printf("tmux-dux %s (%s, %s)\n", version, commit, date)
 			return
 		}
 		if os.Args[1] == "config" && len(os.Args) > 2 && os.Args[2] == "init" {
 			if err := configInit(os.Stdout, os.Args[3:]); err != nil {
-				fmt.Fprintf(os.Stderr, "tmux-commander: config init: %v\n", err)
+				fmt.Fprintf(os.Stderr, "tmux-dux: config init: %v\n", err)
 				os.Exit(1)
 			}
 			return
 		}
 		cfg, _, err := config.Load()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "tmux-commander: load config: %v\n", err)
+			fmt.Fprintf(os.Stderr, "tmux-dux: load config: %v\n", err)
 			os.Exit(1)
 		}
 		activeTheme := theme.ResolveWithCustom(cfg.UI.Theme, cfg.CustomTheme)
@@ -51,13 +51,13 @@ func main() {
 			openConfiguredPopup(cfg, activeTheme)
 			return
 		default:
-			fmt.Fprintf(os.Stderr, "tmux-commander: unknown command %q\n", os.Args[1])
+			fmt.Fprintf(os.Stderr, "tmux-dux: unknown command %q\n", os.Args[1])
 			os.Exit(1)
 		}
 	}
 
 	if err := runPalette(); err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: %v\n", err)
+		fmt.Fprintf(os.Stderr, "tmux-dux: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -223,7 +223,7 @@ func runPaletteOnce(state palette.State) (bool, palette.State, error) {
 		if cfg.UI.RecentCommands && cfg.UI.TmuxRecentLimit > 0 && recentPath != "" {
 			_, err := history.RecordTmuxWithLimits(recentPath, recentHistory, *result.Tmux, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit, time.Now().UTC())
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "tmux-commander: update tmux history: %v\n", err)
+				fmt.Fprintf(os.Stderr, "tmux-dux: update tmux history: %v\n", err)
 			}
 		}
 		action := actions.BuildTmuxCommand(result.Tmux.CommandLine())
@@ -251,7 +251,7 @@ func runPaletteOnce(state palette.State) (bool, palette.State, error) {
 	if cfg.UI.RecentCommands && cfg.UI.RecentLimit > 0 && recentPath != "" && historyCommand.Internal == "" {
 		_, err := history.RecordWithLimits(recentPath, recentHistory, *historyCommand, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit, time.Now().UTC())
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "tmux-commander: update history: %v\n", err)
+			fmt.Fprintf(os.Stderr, "tmux-dux: update history: %v\n", err)
 		}
 	}
 
@@ -329,13 +329,13 @@ func loadRecentHistory(cfg config.Config) (history.File, string) {
 	}
 	file, path, err := history.LoadDefault()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: load history: %v\n", err)
+		fmt.Fprintf(os.Stderr, "tmux-dux: load history: %v\n", err)
 		return history.File{}, path
 	}
 	trimmed := history.TrimWithLimits(file, cfg.UI.RecentLimit, cfg.UI.TmuxRecentLimit)
 	if len(trimmed.Entries) != len(file.Entries) || len(trimmed.TmuxEntries) != len(file.TmuxEntries) {
 		if err := history.Save(path, trimmed); err != nil {
-			fmt.Fprintf(os.Stderr, "tmux-commander: trim history: %v\n", err)
+			fmt.Fprintf(os.Stderr, "tmux-dux: trim history: %v\n", err)
 		}
 	}
 	file = trimmed
@@ -356,11 +356,11 @@ func previewThemes(active theme.Theme) []theme.Theme {
 func openConfiguredPopup(cfg config.Config, activeTheme theme.Theme) {
 	binary, err := os.Executable()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: find executable: %v\n", err)
+		fmt.Fprintf(os.Stderr, "tmux-dux: find executable: %v\n", err)
 		os.Exit(1)
 	}
 	if err := tmux.OpenPopup(binary, cfg.UI.Width, cfg.UI.Height, false, activeTheme); err != nil {
-		fmt.Fprintf(os.Stderr, "tmux-commander: open popup: %v\n", err)
+		fmt.Fprintf(os.Stderr, "tmux-dux: open popup: %v\n", err)
 		os.Exit(1)
 	}
 }

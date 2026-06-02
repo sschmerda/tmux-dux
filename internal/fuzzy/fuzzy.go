@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	sahilfuzzy "github.com/sahilm/fuzzy"
-	"github.com/sschmerda/tmux-commander/internal/config"
+	"github.com/sschmerda/tmux-dux/internal/config"
 )
 
 type Match struct {

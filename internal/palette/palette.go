@@ -10,10 +10,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sschmerda/tmux-commander/internal/config"
-	"github.com/sschmerda/tmux-commander/internal/fuzzy"
-	"github.com/sschmerda/tmux-commander/internal/theme"
-	"github.com/sschmerda/tmux-commander/internal/tmuxcmd"
+	"github.com/sschmerda/tmux-dux/internal/config"
+	"github.com/sschmerda/tmux-dux/internal/fuzzy"
+	"github.com/sschmerda/tmux-dux/internal/theme"
+	"github.com/sschmerda/tmux-dux/internal/tmuxcmd"
 )
 
 type Model struct {
@@ -147,7 +147,7 @@ type styles struct {
 func newStyles(t theme.Theme) styles {
 	return styles{
 		root:          lipgloss.NewStyle().Background(lipgloss.Color(t.Background)),
-		frame:         lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(t.CommanderBorder)).BorderBackground(lipgloss.Color(t.Background)).Background(lipgloss.Color(t.Background)),
+		frame:         lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(t.PaletteBorder)).BorderBackground(lipgloss.Color(t.Background)).Background(lipgloss.Color(t.Background)),
 		title:         lipgloss.NewStyle().Foreground(lipgloss.Color(t.Title)).Background(lipgloss.Color(t.Background)),
 		header:        lipgloss.NewStyle().Foreground(lipgloss.Color(t.Header)).Background(lipgloss.Color(t.Background)).Bold(true),
 		desc:          lipgloss.NewStyle().Foreground(lipgloss.Color(t.Description)).Background(lipgloss.Color(t.Background)),
@@ -927,7 +927,7 @@ func (m Model) controlsMessage() string {
 		controlLine(displayKey(m.keys.NextCategory), "Next category"),
 		controlLine(displayKey(m.keys.PreviousCategory), "Previous category"),
 		"Enter              Select focused entry",
-		"Esc / Ctrl-C       Close commander",
+		"Esc / Ctrl-C       Close palette",
 		controlLine(displayKey(m.keys.TmuxMode), "Toggle command mode"),
 		"",
 		"tmux Command Arguments",

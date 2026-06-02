@@ -3,7 +3,7 @@ package fuzzy
 import (
 	"testing"
 
-	"github.com/sschmerda/tmux-commander/internal/config"
+	"github.com/sschmerda/tmux-dux/internal/config"
 )
 
 func TestFilterMatchesMultipleTokens(t *testing.T) {
