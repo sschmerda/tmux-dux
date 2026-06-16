@@ -193,7 +193,7 @@ title = "Move Window Left"
 description = "Swap the current window with the previous window"
 category = "Windows"
 aliases = ["mwl"]
-icon = "󰁌"
+icon = "󰁍"
 action = "tmux"
 command = "swap-window -t -1"
 
@@ -211,7 +211,7 @@ title = "Move Window Left by Count"
 description = "Prompt for how many positions to move the current window left"
 category = "Windows"
 aliases = ["mwlc"]
-icon = "󰁌"
+icon = "󰁍"
 action = "tmux"
 command = '''run-shell 'count={{raw_input}}; case "$count" in *[!0-9]*|"") tmux display-message "count must be numeric"; exit 0 ;; esac; current=$(tmux display-message -p "#{window_id}"); while [ "$count" -gt 0 ]; do tmux swap-window -s "$current" -t -1 || exit 0; tmux select-window -t "$current"; count=$((count - 1)); done''''
 prompt = "count"
